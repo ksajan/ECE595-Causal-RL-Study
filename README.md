@@ -51,12 +51,15 @@ python scripts/infer.py --algo d3qn --model-path results/cartpole/d3qn_cf/202512
 | D3QN CF (0.05) | 127.9 ± 66.1 | 21.1 ± 12.9 | `results/eval/d3qn/20251208-031715/d3qn.json`, `results/eval/d3qn/20251208-031725/d3qn.json` |
 
 ## Plots
-![Final comparison](results/plots_cf_final/comparison_bar.png)
+![Final comparison (normalized evals)](results/plots_cf_final/comparison_bar.png)
 ![D3QN losses/evals](results/plots_cf_final/d3qn_overview.png)
 
 ## Demos (videos)
-- CartPole CF (0.05) recorded: `results/infer/d3qn/20251208-180811` (returns 94, 135).
-- Lunar Lander random policy: `results/infer/lunar/20251208-182039` (Box2D runtime verified).
+- CartPole CF (0.05) recorded: `results/infer/d3qn/20251208-180811/demo-episode-0.mp4` (returns 94, 135).
+- Earlier CartPole demos: `results/infer/d3qn/20251207-223936/demo-episode-0.mp4`, `results/infer/d3qn/20251207-223945/demo-episode-0.mp4`.
+- SAC demo: `results/infer/sac/20251207-223952/demo-episode-0.mp4`.
+- Rainbow demo: `results/infer/rainbow/20251207-224001/demo-episode-0.mp4`.
+- Lunar Lander random policy: `results/infer/lunar/20251208-182039/demo-episode-0.mp4`, `demo-episode-1.mp4` (Box2D runtime verified).
 
 ## Repo Map
 - `scripts/`: dataset, train, eval, infer, plotting.
