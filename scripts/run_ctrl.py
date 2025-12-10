@@ -67,6 +67,12 @@ class D3QNCliConfig:
     use_cf: bool = False
     cf_k: int = 1
     bicogan_dir: Optional[Path] = None
+    cf_filter_done: bool = False
+    cf_sample_frac: Optional[float] = None
+    cf_quality_thresh_x: Optional[float] = None
+    cf_quality_thresh_theta: Optional[float] = None
+    cf_action_noise_std: float = 0.05
+    cf_use_env_step: bool = False
     udim: int = 4
     epochs: int = 1000
     batch_size: int = 512
@@ -170,6 +176,12 @@ def train_d3qn(cfg: D3QNCliConfig) -> Path:
             G=G,
             E=E,
             cf_k=cfg.cf_k,
+            cf_filter_done=cfg.cf_filter_done,
+            cf_sample_frac=cfg.cf_sample_frac,
+            cf_quality_thresh_x=cfg.cf_quality_thresh_x,
+            cf_quality_thresh_theta=cfg.cf_quality_thresh_theta,
+            cf_action_noise_std=cfg.cf_action_noise_std,
+            cf_use_env_step=cfg.cf_use_env_step,
         )
         label = f"Real+CF (k={cfg.cf_k}) D3QN+CQL"
     else:
@@ -323,6 +335,37 @@ def build_parser() -> argparse.ArgumentParser:
     d3qn.add_argument(
         "--bicogan-dir", type=Path, help="Directory with G.pt/E.pt."
     )
+    d3qn.add_argument(
+        "--cf-filter-done",
+        action="store_true",
+        help="Filter CF transitions with reward <= 0.5.",
+    )
+    d3qn.add_argument(
+        "--cf-sample-frac",
+        type=float,
+        help="Optional fraction of CF transitions to keep (0-1).",
+    )
+    d3qn.add_argument(
+        "--cf-quality-thresh-x",
+        type=float,
+        help="Optional abs(x) threshold to keep CF samples.",
+    )
+    d3qn.add_argument(
+        "--cf-quality-thresh-theta",
+        type=float,
+        help="Optional abs(theta) threshold to keep CF samples.",
+    )
+    d3qn.add_argument(
+        "--cf-action-noise-std",
+        type=float,
+        default=D3QNCliConfig.cf_action_noise_std,
+        help="Gaussian noise std added to CF continuous actions.",
+    )
+    d3qn.add_argument(
+        "--cf-use-env-step",
+        action="store_true",
+        help="Use CartPole dynamics to rescore CF reward/done (ignores generator for reward/done).",
+    )
     d3qn.add_argument("--udim", type=int, default=D3QNCliConfig.udim)
     d3qn.add_argument("--epochs", type=int, default=D3QNCliConfig.epochs)
     d3qn.add_argument(
@@ -392,6 +435,12 @@ def main() -> None:
             use_cf=args.use_cf,
             cf_k=args.cf_k,
             bicogan_dir=args.bicogan_dir,
+            cf_filter_done=args.cf_filter_done,
+            cf_sample_frac=args.cf_sample_frac,
+            cf_quality_thresh_x=args.cf_quality_thresh_x,
+            cf_quality_thresh_theta=args.cf_quality_thresh_theta,
+            cf_action_noise_std=args.cf_action_noise_std,
+            cf_use_env_step=args.cf_use_env_step,
             udim=args.udim,
             epochs=args.epochs,
             batch_size=args.batch_size,

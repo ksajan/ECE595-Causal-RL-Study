@@ -1,0 +1,17 @@
+{
+  "dataset_path": "data/SD_dataset_clean.pt",
+  "output_dir": "results/cartpole/bicogan/20251208-011000/20251208-011253",
+  "batch_size": 256,
+  "seed": 1,
+  "udim": 4,
+  "pre_train_lr": 0.001,
+  "pre_train_epochs": 15,
+  "lr": 0.0001,
+  "disc_lr": 0.0001,
+  "beta1": 0.5,
+  "beta2": 0.9,
+  "num_epochs": 50,
+  "alpha": 0.1,
+  "rho": 5e-05,
+  "phi": 10.0
+}

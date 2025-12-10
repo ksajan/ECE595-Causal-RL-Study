@@ -1,0 +1,25 @@
+{
+  "episodes": 500,
+  "horizon": 200,
+  "seed": 1,
+  "output": "data/SD_dataset_clean.pt",
+  "shapes": {
+    "s": [
+      8636,
+      4
+    ],
+    "a": [
+      8636
+    ],
+    "acont": [
+      8636
+    ],
+    "r": [
+      8636
+    ],
+    "sp": [
+      8636,
+      4
+    ]
+  }
+}

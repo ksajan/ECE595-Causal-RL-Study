@@ -61,3 +61,31 @@ CF stats: real done ≈ 8.5%; CF done ≈ 14.8%; CF reward mean ≈ 0.85; θ bia
 ## Generator reward/terminal alignment
 - `generate_cf_dataset` now clones the generator prediction before adding `STATE_NOISE_STD` noise, clamps the noisy state, and still derives reward/done from the clean prediction, which mirrors the paper’s notion of rescoring CF samples via the CTRL CartPole dynamics so the transitions remain in the noisy SD data distribution.
 - Quick sanity run (50 epochs, cf_sample_frac=0.25, env-rescored CF) saved at `results/cartpole/d3qn_cf/20251208-024339`; clean eval 70.74 ± 18.18 (`results/eval/d3qn/20251208-024356/d3qn.json`), CTRL noisy eval 22.32 ± 15.16 (`results/eval/d3qn/20251208-024405/d3qn.json`). The higher clean mean suggests the regenerated CF samples feed the agent a wider but consistent distribution, while CTRL performance still sits near previous baselines.
+
+## Longer cf_sample_frac=0.25 run (200 epochs)
+- Training command: `scripts/train.py d3qn --dataset-path data/SD_dataset_clean.pt --use-cf --bicogan-dir results/cartpole/bicogan/20251208-011000/20251208-011253 --cf-sample-frac 0.25 --cf-action-noise-std 0.05 --cf-use-env-step --epochs 200 --seed 0`, resulting run directory `results/cartpole/d3qn_cf/20251208-030303`.
+- Periodic evals show rising Q-means (≈17) but consistent clean eval variance (epoch 200 eval in log: 18.58 ± 10.56), which aligns with earlier trends that clean returns bounce but CTRL returns stay lower.
+- Final clean CartPole eval: 52.40 ± 25.63 (`results/eval/d3qn/20251208-030337/d3qn.json`); CTRL noisy eval: 18.58 ± 10.67 (`results/eval/d3qn/20251208-030347/d3qn.json`). The robust clean spike shows the lighter CF mix can generate high-scoring trajectories, yet the CTRL env continues to cap mean return at ~18–20, so the next experiments should explore either smaller CF fractions or further adjustments to the reward/terminal scoring to keep the noisy distribution aligned.
+
+## cf_sample_frac=0.10 run (200 epochs, seed=1)
+- Training command: `scripts/train.py d3qn --dataset-path data/SD_dataset_clean.pt --use-cf --bicogan-dir results/cartpole/bicogan/20251208-011000/20251208-011253 --cf-sample-frac 0.10 --cf-action-noise-std 0.05 --cf-use-env-step --epochs 200 --seed 1`, output `results/cartpole/d3qn_cf/20251208-030806`.
+- Clean eval: 51.26 ± 26.64 (`results/eval/d3qn/20251208-030839/d3qn.json`); CTRL eval: 19.12 ± 12.63 (`results/eval/d3qn/20251208-030846/d3qn.json`). CTRL mean remains ~18–19 while clean mean spikes above 50, so lighter CF weights keep boosting clean returns but not the noisy env.
+
+## Eval comparison snapshot (clean vs. CTRL envs)
+- D3QN real-only (500-episode SD dataset) – clean 34.42 ± 22.29, CTRL 16.74 ± 9.20 (`results/eval/d3qn/20251208-011544/d3qn.json`, `results/eval/d3qn/20251208-011553/d3qn.json`).
+- CF `cf_sample_frac=0.25 seed=0` – clean 52.40 ± 25.63, CTRL 18.58 ± 10.67 (`results/eval/d3qn/20251208-030337/d3qn.json`, `results/eval/d3qn/20251208-030347/d3qn.json`).
+- CF `cf_sample_frac=0.10 seed=1` – clean 51.26 ± 26.64, CTRL 19.12 ± 12.63 (`results/eval/d3qn/20251208-030839/d3qn.json`, `results/eval/d3qn/20251208-030846/d3qn.json`).
+These numbers frame the current understanding: clean returns benefit from CF, but CTRL/noisy remains capped, suggesting future steps should adjust CF sampling or maybe increase real-data proportion when evaluating noisy policy.
+
+## cf_sample_frac=0.05 run (200 epochs, seed=2)
+- Command: `scripts/train.py d3qn --dataset-path data/SD_dataset_clean.pt --use-cf --bicogan-dir results/cartpole/bicogan/20251208-011000/20251208-011253 --cf-sample-frac 0.05 --cf-action-noise-std 0.05 --cf-use-env-step --epochs 200 --seed 2`, producing `results/cartpole/d3qn_cf/20251208-031646`.
+- Clean eval: 127.94 ± 66.14 (`results/eval/d3qn/20251208-031715/d3qn.json`); CTRL eval: 21.14 ± 12.87 (`results/eval/d3qn/20251208-031725/d3qn.json`). The CFG mix now delivers very high clean returns while the noisy CTRL evaluation stays around 21, reinforcing the pattern that cleaner CF blends boost clean performance but leave the noisy environment capped.
+
+## Baseline story for the class report
+- Focus on SAC (solves the clean CartPole), D3QN real-only, and the CF mixes with aligned reward/rescore scoring. Use these snapshots in the report:
+  - SAC clean: 492.6 ± 33.3 (`results/eval/sac/20251208-003308/sac.json`).
+  - D3QN real-only: clean 34.42 ± 22.29, CTRL 16.74 ± 9.20 (`results/eval/d3qn/20251208-011544/d3qn.json`, `results/eval/d3qn/20251208-011553/d3qn.json`).
+  - D3QN CF (0.25): clean 52.40 ± 25.63, CTRL 18.58 ± 10.67 (`results/eval/d3qn/20251208-030337/d3qn.json`, `results/eval/d3qn/20251208-030347/d3qn.json`).
+  - D3QN CF (0.10): clean 51.26 ± 26.64, CTRL 19.12 ± 12.63 (`results/eval/d3qn/20251208-030839/d3qn.json`, `results/eval/d3qn/20251208-030846/d3qn.json`).
+  - D3QN CF (0.05): clean 127.94 ± 66.14, CTRL 21.14 ± 12.87 (`results/eval/d3qn/20251208-031715/d3qn.json`, `results/eval/d3qn/20251208-031725/d3qn.json`).
+- This set of results keeps the narrative consistent: CF weight increases clean return but CTRL returns remain in the 18–21 plateau, while SAC still dominates clean scores. The report can refer to these specific eval files when discussing each baseline.

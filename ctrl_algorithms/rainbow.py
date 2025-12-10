@@ -34,16 +34,17 @@ class RainbowNet(nn.Module):
         state_dim: int = 4,
         n_actions: int = 11,
         n_atoms: int = 51,
-        v_min: float = -10.0,
-        v_max: float = 10.0,
-        noisy_std: float = 0.5,
+        v_min: float = 0.0,
+        v_max: float = 500.0,
+        noisy_std: float = 0.4,
     ):
         super().__init__()
         self.n_actions = n_actions
         self.n_atoms = n_atoms
         self.v_min = v_min
         self.v_max = v_max
-        self.support = torch.linspace(v_min, v_max, n_atoms)
+        support = torch.linspace(v_min, v_max, n_atoms)
+        self.register_buffer("support", support)
 
         hidden = 256
         self.fc1 = nn.Linear(state_dim, hidden)
@@ -69,6 +70,11 @@ class RainbowNet(nn.Module):
         probs = F.softmax(logits, dim=-1)
         support = self.support.to(x.device)
         return torch.sum(probs * support, dim=-1)
+
+    def reset_noise(self) -> None:
+        self.fc2.reset_noise()
+        self.adv.reset_noise()
+        self.val.reset_noise()
 
 
 class NoisyLinear(nn.Module):
@@ -121,13 +127,14 @@ class RainbowConfig:
     dataset_path: Path
     output_dir: Path = Path("results/cartpole/rainbow")
     seed: int = 0
-    epochs: int = 600
-    batch_size: int = 256
+    epochs: int = 500
+    batch_size: int = 128
     gamma: float = 0.99
-    lr: float = 1.0e-4
-    tau: float = 0.005
+    lr: float = 2.5e-4
+    tau: float = 1.0  # unused with hard target updates, kept for compatibility
+    target_update_freq: int = 500  # batches per hard target update
     n_atoms: int = 51
-    v_min: float = -50.0
+    v_min: float = 0.0
     v_max: float = 500.0
     eval_every: int = 50
     eval_episodes: int = 50
@@ -264,19 +271,28 @@ def train_rainbow_offline(cfg: RainbowConfig) -> Dict[str, Any]:
         "loss": [],
     }
 
+    global_step = 0
     for ep in range(cfg.epochs):
         batch_losses: List[float] = []
         for batch in loader:
+            global_step += 1
+            q_net.reset_noise()
+            target_net.reset_noise()
+
             s, a_idx, r, sp, d = [t.to(device) for t in batch]
             logits = q_net.dist(s)
             log_prob = F.log_softmax(logits, dim=-1)
             chosen_log_prob = log_prob[torch.arange(s.size(0)), a_idx]
 
             with torch.no_grad():
+                # Double DQN style: argmax from online net, dist from target net
+                next_online_logits = q_net.dist(sp)
+                next_online_prob = F.softmax(next_online_logits, dim=-1)
+                next_online_q = torch.sum(next_online_prob * support, dim=-1)
+                next_a = next_online_q.argmax(dim=1)
+
                 next_logits = target_net.dist(sp)
                 next_prob = F.softmax(next_logits, dim=-1)
-                next_q = torch.sum(next_prob * support, dim=-1)
-                next_a = next_q.argmax(dim=1)
                 next_dist = next_prob[torch.arange(s.size(0)), next_a]
                 target_dist = _projection(next_dist, r, d, cfg.gamma, support)
 
@@ -285,9 +301,8 @@ def train_rainbow_offline(cfg: RainbowConfig) -> Dict[str, Any]:
             loss.backward()
             opt.step()
 
-            with torch.no_grad():
-                for p, tp in zip(q_net.parameters(), target_net.parameters()):
-                    tp.data.mul_(1.0 - cfg.tau).add_(cfg.tau * p.data)
+            if global_step % cfg.target_update_freq == 0:
+                target_net.load_state_dict(q_net.state_dict())
 
             batch_losses.append(loss.item())
 

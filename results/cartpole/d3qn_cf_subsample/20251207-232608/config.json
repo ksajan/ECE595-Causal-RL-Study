@@ -1,0 +1,20 @@
+{
+  "dataset_path": "data/SD_dataset_clean.pt",
+  "output_dir": "results/cartpole/d3qn_cf_subsample/20251207-232608",
+  "seed": 0,
+  "use_cf": true,
+  "cf_k": 1,
+  "bicogan_dir": "results/cartpole/bicogan/20251207-223241",
+  "cf_filter_done": true,
+  "cf_sample_frac": 0.5,
+  "udim": 4,
+  "epochs": 600,
+  "batch_size": 512,
+  "gamma": 0.99,
+  "lr": 0.00015,
+  "tau": 0.005,
+  "alpha_cql": 0.02,
+  "reward_clip": null,
+  "target_clip": 20.0,
+  "max_grad_norm": 1.0
+}

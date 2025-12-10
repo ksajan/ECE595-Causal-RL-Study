@@ -118,10 +118,20 @@ def plot_d3qn(real_path: Path, cf_path: Path, out_dir: Path) -> None:
     save_fig(fig, out_dir / "d3qn_overview.png")
 
 
-def plot_bar_comparison(results: Dict[str, Path], out_dir: Path) -> None:
+def plot_bar_comparison(
+    results: Dict[str, Path], out_dir: Path, eval_overrides: Dict[str, Path]
+) -> None:
     labels: List[str] = []
     vals: List[float] = []
     for name, path in results.items():
+        override_path = eval_overrides.get(name)
+        if override_path and override_path.exists():
+            override = load_json(override_path)
+            if override and "mean_return" in override:
+                labels.append(name)
+                vals.append(float(override["mean_return"]))
+                continue
+
         data = load_json(path)
         if not data:
             continue
@@ -129,13 +139,13 @@ def plot_bar_comparison(results: Dict[str, Path], out_dir: Path) -> None:
         if not evals:
             continue
         last = evals[-1]
-        if isinstance(last, dict):
-            vals.append(float(last.get("mean", 0.0)))
-        else:
-            try:
+        try:
+            if isinstance(last, dict):
+                vals.append(float(last.get("mean", 0.0)))
+            else:
                 vals.append(float(last[0]))
-            except (TypeError, ValueError, IndexError):
-                continue
+        except (TypeError, ValueError, IndexError):
+            continue
         labels.append(name)
     if not labels:
         print("[skip] no eval data for bar chart")
@@ -182,6 +192,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("results/plots"),
         help="Directory to write png plots.",
     )
+    parser.add_argument(
+        "--eval-override",
+        action="append",
+        help="Override eval path for the bar chart (NAME=PATH).",
+    )
     return parser
 
 
@@ -192,6 +207,19 @@ def main() -> None:
     plot_sac(args.sac_metrics, out_dir)
     plot_rainbow(args.rainbow_metrics, out_dir)
     plot_d3qn(args.d3qn_real, args.d3qn_cf, out_dir)
+    overrides: Dict[str, Path] = {
+        "SAC": Path("results/eval/sac/20251208-003308/sac.json"),
+        "Rainbow": Path("results/eval/rainbow/20251208-003300/rainbow.json"),
+        "D3QN real": Path("results/eval/d3qn/20251208-003243/d3qn.json"),
+        "D3QN CF": Path("results/eval/d3qn/20251208-003251/d3qn.json"),
+    }
+    if args.eval_override:
+        for entry in args.eval_override:
+            if "=" not in entry:
+                print(f"[skip] invalid override '{entry}' (expected NAME=PATH)")
+                continue
+            name, path_str = entry.split("=", 1)
+            overrides[name.strip()] = Path(path_str.strip())
     plot_bar_comparison(
         {
             "SAC": args.sac_metrics,
@@ -200,6 +228,7 @@ def main() -> None:
             "D3QN CF": args.d3qn_cf,
         },
         out_dir,
+        overrides,
     )
 
 

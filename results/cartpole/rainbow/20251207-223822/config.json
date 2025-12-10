@@ -1,0 +1,15 @@
+{
+  "dataset_path": "data/SD_dataset_clean.pt",
+  "output_dir": "results/cartpole/rainbow/20251207-223822",
+  "seed": 0,
+  "epochs": 400,
+  "batch_size": 256,
+  "gamma": 0.99,
+  "lr": 0.0001,
+  "tau": 0.005,
+  "n_atoms": 51,
+  "v_min": -50.0,
+  "v_max": 500.0,
+  "eval_every": 50,
+  "eval_episodes": 50
+}

@@ -1,0 +1,32 @@
+{
+  "algo": "d3qn",
+  "run_dir": "results/cartpole/d3qn_cf_filtered_done/20251207-232148",
+  "episodes": 20,
+  "seed": 0,
+  "use_ctrl_env": false,
+  "action_noise_std": 0.0,
+  "mean_return": 20.850000381469727,
+  "std_return": 11.828934669494629,
+  "returns": [
+    51.0,
+    18.0,
+    33.0,
+    16.0,
+    42.0,
+    11.0,
+    11.0,
+    17.0,
+    24.0,
+    19.0,
+    27.0,
+    10.0,
+    10.0,
+    20.0,
+    15.0,
+    10.0,
+    29.0,
+    34.0,
+    10.0,
+    10.0
+  ]
+}

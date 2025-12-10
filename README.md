@@ -1,64 +1,66 @@
-# Reinforcement-Learning-DeepDive
-Look at the RL paradigm at a fundamental level with relevant notes, courses, materials, and experiment notebooks, digging into RL a level deeper.
+# ECE595 Causal RL Deep Dive
+Compact codebase for our CTRL (counterfactual RL) CartPole study with CF-augmented D3QN, SAC, Rainbow baselines, and recorded demos.
 
-#### RL and Deep RL have a wealth of material available; this is one such attempt to delve deeply into the subject to help study and understand state-of-the-art research
-- The following will be covered:
-  - RL & Deep RL [[fundamentals](https://github.com/SankarshU/Reinforcement-Learning-Causal-RL-DeepDive/blob/2d9192dde95a1002dead4d40656e168cd9906b4e/Basics/Introduction.md)]:
-    - Concepts and illustrations from the following courses, additional experiments beyond assignments:
-      - [Berkeley Deep RL][[link](http://rll.berkeley.edu/deeprlcourse/)]
-      - [Practical RL][[link](https://github.com/yandexdataschool/Practical_RL)]
-  - Causal Reinforcement Learning research [exploration](https://github.com/SankarshU/Reinforcement-Learning-DeepDive/tree/71c25d91abea2bc68876c736fae8632b5143061a/CausalRL):
-    - Summarizing or deep diving into research
-  - Deep RL literature deep dive to explore the developments in this field-[current-research](https://github.com/SankarshU/Reinforcement-Learning-DeepDive/blob/c6bd0d27c9566eb535946a8243cfb0e765a20c72/Latest-Research/Readme.md):
-
-- Other Interesting References (will be added continually)
-  - Grokking Deep RL [Notebooks](https://github.com/mimoralea/gdrl)
-  - MIT 6.S191: Reinforcement Learning [link](https://www.youtube.com/watch?v=8JVRbHAVCws)
-
-- Must read/not to be missed
-  - Reinforcement Learning, An Introduction By Richard S. Sutton and Andrew G. Barto
-
-
-## Quickstart (CartPole CTRL experiments)
-
-### Setup
-1. Create/activate a Python 3.10+ venv and install deps:
-   ```bash
-   pip install torch gymnasium numpy matplotlib seaborn tqdm scikit-learn pandas
-   ```
-2. From repo root, create the SD dataset:
-   ```bash
-   python scripts/run_ctrl.py dataset --episodes 250 --horizon 200 --output data/SD_dataset_clean.pt
-   ```
-
-### Train CTRL components
-- Train BiCoGAN (for counterfactual generation):
-  ```bash
-  python scripts/run_ctrl.py train-bicogan --dataset-path data/SD_dataset_clean.pt --output-dir results/cartpole/bicogan
-  ```
-- Train offline D3QN+CQL on real-only:
-  ```bash
-  python scripts/run_ctrl.py train-d3qn --dataset-path data/SD_dataset_clean.pt --output-dir results/cartpole/d3qn_real
-  ```
-- Train offline D3QN+CQL with counterfactual augmentation:
-  ```bash
-  python scripts/run_ctrl.py train-d3qn --dataset-path data/SD_dataset_clean.pt --use-cf --cf-k 1 --bicogan-dir results/cartpole/bicogan --output-dir results/cartpole/d3qn_cf
-  ```
-
-### Alternative baselines
-- Soft Actor-Critic (offline):
-  ```bash
-  python scripts/run_alt_algos.py sac --dataset-path data/SD_dataset_clean.pt --output-dir results/cartpole/sac
-  ```
-- Rainbow DQN (C51, offline):
-  ```bash
-  python scripts/run_alt_algos.py rainbow --dataset-path data/SD_dataset_clean.pt --output-dir results/cartpole/rainbow
-  ```
-
-### Demo / recording
-Render or record any trained policy (SAC/Rainbow/D3QN) on CartPole:
+## Quickstart
+1) Install deps in a venv (Python 3.10+):
 ```bash
-python scripts/demo_policy.py --algo sac --model-path results/cartpole/sac/actor.pt --dataset-path data/SD_dataset_clean.pt --episodes 1
-# or record video frames:
-python scripts/demo_policy.py --algo rainbow --model-path results/cartpole/rainbow/q_net.pt --dataset-path data/SD_dataset_clean.pt --episodes 2 --record-dir results/cartpole/rainbow/videos
+pip install torch gymnasium numpy matplotlib seaborn tqdm scikit-learn pandas
 ```
+2) Build the SD dataset:
+```bash
+python scripts/train.py dataset --episodes 250 --horizon 200 --output data/SD_dataset_clean.pt
+```
+3) Train:
+- BiCoGAN (CF generator):  
+  `python scripts/train.py bicogan --dataset-path data/SD_dataset_clean.pt`
+- D3QN real-only:  
+  `python scripts/train.py d3qn --dataset-path data/SD_dataset_clean.pt`
+- D3QN + CF (example cf_frac=0.10):  
+  `python scripts/train.py d3qn --dataset-path data/SD_dataset_clean.pt --use-cf --cf-k 1 --cf-sample-frac 0.10 --cf-action-noise-std 0.05 --cf-use-env-step --bicogan-dir results/cartpole/bicogan/<ts>`
+- SAC baseline:  
+  `python scripts/train.py sac --dataset-path data/SD_dataset_clean.pt`
+
+4) Evaluate (clean vs CTRL noisy env):
+```bash
+python scripts/eval.py --algo d3qn --run-dir results/cartpole/d3qn_cf/<run> --episodes 50
+python scripts/eval.py --algo d3qn --run-dir results/cartpole/d3qn_cf/<run> --episodes 50 --use-ctrl-env
+```
+
+5) Plots (override evals if needed):
+```bash
+python scripts/plot_results.py --d3qn-real results/cartpole/d3qn_real/<run>/metrics.json \
+  --d3qn-cf results/cartpole/d3qn_cf/<run>/metrics.json \
+  --output-dir results/plots_cf_final \
+  --eval-override 'D3QN real=results/eval/d3qn/<clean_eval>.json' \
+  --eval-override 'D3QN CF=results/eval/d3qn/<ctrl_eval>.json'
+```
+
+6) Record a demo video:
+```bash
+python scripts/infer.py --algo d3qn --model-path results/cartpole/d3qn_cf/20251208-031646/q_net.pt \
+  --dataset-path data/SD_dataset_clean.pt --episodes 2 --record
+```
+
+## Key Results (50-episode evals)
+| Model | Clean mean ± std | CTRL noisy mean ± std | References |
+|---|---|---|---|
+| SAC (offline) | 492.6 ± 33.3 | n/a | `results/eval/sac/20251208-003308/sac.json` |
+| D3QN real-only | 34.4 ± 22.3 | 16.7 ± 9.2 | `results/eval/d3qn/20251208-011544/d3qn.json`, `results/eval/d3qn/20251208-011553/d3qn.json` |
+| D3QN CF (0.25) | 52.4 ± 25.6 | 18.6 ± 10.7 | `results/eval/d3qn/20251208-030337/d3qn.json`, `results/eval/d3qn/20251208-030347/d3qn.json` |
+| D3QN CF (0.10) | 51.3 ± 26.6 | 19.1 ± 12.6 | `results/eval/d3qn/20251208-030839/d3qn.json`, `results/eval/d3qn/20251208-030846/d3qn.json` |
+| D3QN CF (0.05) | 127.9 ± 66.1 | 21.1 ± 12.9 | `results/eval/d3qn/20251208-031715/d3qn.json`, `results/eval/d3qn/20251208-031725/d3qn.json` |
+
+## Plots
+![Final comparison](results/plots_cf_final/comparison_bar.png)
+![D3QN losses/evals](results/plots_cf_final/d3qn_overview.png)
+
+## Demos (videos)
+- CartPole CF (0.05) recorded: `results/infer/d3qn/20251208-180811` (returns 94, 135).
+- Lunar Lander random policy: `results/infer/lunar/20251208-182039` (Box2D runtime verified).
+
+## Repo Map
+- `scripts/`: dataset, train, eval, infer, plotting.
+- `CTRL/`, `ctrl_algorithms/`: env/dynamics, BiCoGAN, D3QN/SAC/Rainbow models and utilities.
+- `data/`: SD dataset.
+- `results/`: training artifacts, eval JSONs, plots, demos.
+- `RUN_SUMMARY.md`, `ANALYSIS_NOTES.md`: experiment log + details for the report.
