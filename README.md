@@ -44,7 +44,6 @@ python scripts/infer.py --algo d3qn --model-path results/cartpole/d3qn_cf/202512
 ## Key Results (50-episode evals)
 | Model | Clean mean ± std | CTRL noisy mean ± std | References |
 |---|---|---|---|
-| SAC (offline) | 492.6 ± 33.3 | n/a | `results/eval/sac/20251208-003308/sac.json` |
 | D3QN real-only | 34.4 ± 22.3 | 16.7 ± 9.2 | `results/eval/d3qn/20251208-011544/d3qn.json`, `results/eval/d3qn/20251208-011553/d3qn.json` |
 | D3QN CF (0.25) | 52.4 ± 25.6 | 18.6 ± 10.7 | `results/eval/d3qn/20251208-030337/d3qn.json`, `results/eval/d3qn/20251208-030347/d3qn.json` |
 | D3QN CF (0.10) | 51.3 ± 26.6 | 19.1 ± 12.6 | `results/eval/d3qn/20251208-030839/d3qn.json`, `results/eval/d3qn/20251208-030846/d3qn.json` |

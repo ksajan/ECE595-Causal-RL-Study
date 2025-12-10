@@ -28,52 +28,6 @@ def save_fig(fig: plt.Figure, out_path: Path) -> None:
     print(f"[saved] {out_path}")
 
 
-def plot_sac(path: Path, out_dir: Path) -> None:
-    data = load_json(path)
-    if not data:
-        return
-    fig, ax = plt.subplots(1, 2, figsize=(10, 4))
-    ax[0].plot(data.get("critic_loss", []), label="critic")
-    ax[0].plot(data.get("actor_loss", []), label="actor")
-    ax[0].set_title("SAC losses")
-    ax[0].set_xlabel("epoch")
-    ax[0].legend()
-
-    evals = data.get("eval_returns") or []
-    if evals:
-        ax[1].plot(
-            [e["epoch"] for e in evals],
-            [e["mean"] for e in evals],
-            marker="o",
-        )
-        ax[1].set_title("SAC eval mean return")
-        ax[1].set_xlabel("epoch")
-        ax[1].set_ylabel("mean return")
-    save_fig(fig, out_dir / "sac_overview.png")
-
-
-def plot_rainbow(path: Path, out_dir: Path) -> None:
-    data = load_json(path)
-    if not data:
-        return
-    fig, ax = plt.subplots(1, 2, figsize=(10, 4))
-    ax[0].plot(data.get("loss", []))
-    ax[0].set_title("Rainbow loss")
-    ax[0].set_xlabel("epoch")
-
-    evals = data.get("eval_returns") or []
-    if evals:
-        ax[1].plot(
-            [e["epoch"] for e in evals],
-            [e["mean"] for e in evals],
-            marker="o",
-        )
-        ax[1].set_title("Rainbow eval mean return")
-        ax[1].set_xlabel("epoch")
-        ax[1].set_ylabel("mean return")
-    save_fig(fig, out_dir / "rainbow_overview.png")
-
-
 def plot_d3qn(real_path: Path, cf_path: Path, out_dir: Path) -> None:
     real = load_json(real_path) or {}
     cf = load_json(cf_path) or {}
@@ -163,18 +117,6 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--sac-metrics",
-        type=Path,
-        default=Path("results/cartpole/sac/metrics.json"),
-        help="Path to SAC metrics.json.",
-    )
-    parser.add_argument(
-        "--rainbow-metrics",
-        type=Path,
-        default=Path("results/cartpole/rainbow/metrics.json"),
-        help="Path to Rainbow metrics.json.",
-    )
-    parser.add_argument(
         "--d3qn-real",
         type=Path,
         default=Path("results/cartpole/d3qn_real/metrics.json"),
@@ -204,12 +146,8 @@ def main() -> None:
     args = build_parser().parse_args()
     out_dir = args.output_dir
 
-    plot_sac(args.sac_metrics, out_dir)
-    plot_rainbow(args.rainbow_metrics, out_dir)
     plot_d3qn(args.d3qn_real, args.d3qn_cf, out_dir)
     overrides: Dict[str, Path] = {
-        "SAC": Path("results/eval/sac/20251208-003308/sac.json"),
-        "Rainbow": Path("results/eval/rainbow/20251208-003300/rainbow.json"),
         "D3QN real": Path("results/eval/d3qn/20251208-003243/d3qn.json"),
         "D3QN CF": Path("results/eval/d3qn/20251208-003251/d3qn.json"),
     }
@@ -222,8 +160,6 @@ def main() -> None:
             overrides[name.strip()] = Path(path_str.strip())
     plot_bar_comparison(
         {
-            "SAC": args.sac_metrics,
-            "Rainbow": args.rainbow_metrics,
             "D3QN real": args.d3qn_real,
             "D3QN CF": args.d3qn_cf,
         },
