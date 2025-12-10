@@ -54,11 +54,11 @@ python scripts/infer.py --algo d3qn \
 | D3QN CF (0.05) | 127.9 ± 66.1 | 21.1 ± 12.9 | `results/eval/d3qn/20251208-031715.json`, `...031725.json` |
 
 ## Plots
-- Final comparison: `results/plots_cf_final/comparison_bar.png`
-- D3QN losses/evals: `results/plots_cf_final/d3qn_overview.png`
+![Final comparison](results/plots_cf_final/comparison_bar.png)
+![D3QN losses/evals](results/plots_cf_final/d3qn_overview.png)
 
 ## Demo Videos
-- CartPole CF (0.05): `results/infer/d3qn/20251208-180811/demo-episode-0.mp4` (can’t embed inline on GitHub; open from repo).
+- CartPole CF (0.05): `results/infer/d3qn/20251208-180811/demo-episode-0.mp4` (returns 94, 135)
 - Earlier CartPole demos: `results/infer/d3qn/20251207-223936/demo-episode-0.mp4`, `results/infer/d3qn/20251207-223945/demo-episode-0.mp4`
 - Rainbow: `results/infer/rainbow/20251207-224001/demo-episode-0.mp4`
 - SAC: `results/infer/sac/20251207-223952/demo-episode-0.mp4`
