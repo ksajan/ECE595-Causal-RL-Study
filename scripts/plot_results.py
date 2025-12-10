@@ -117,6 +117,12 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
+        "--rainbow-metrics",
+        type=Path,
+        default=Path("results/cartpole/rainbow_reboot/20251208-001041/metrics.json"),
+        help="Path to Rainbow metrics.json.",
+    )
+    parser.add_argument(
         "--d3qn-real",
         type=Path,
         default=Path("results/cartpole/d3qn_real/metrics.json"),
@@ -148,6 +154,7 @@ def main() -> None:
 
     plot_d3qn(args.d3qn_real, args.d3qn_cf, out_dir)
     overrides: Dict[str, Path] = {
+        "Rainbow": Path("results/eval/rainbow/20251208-003300/rainbow.json"),
         "D3QN real": Path("results/eval/d3qn/20251208-003243/d3qn.json"),
         "D3QN CF": Path("results/eval/d3qn/20251208-003251/d3qn.json"),
     }
@@ -160,6 +167,7 @@ def main() -> None:
             overrides[name.strip()] = Path(path_str.strip())
     plot_bar_comparison(
         {
+            "Rainbow": args.rainbow_metrics,
             "D3QN real": args.d3qn_real,
             "D3QN CF": args.d3qn_cf,
         },
