@@ -1,0 +1,35 @@
+Gradescope submission contents
+------------------------------
+This folder contains:
+- code/: CTRL implementation, helper algorithms (D3QN/Rainbow/SAC), scripts, and the small CartPole-SD datasets.
+- INSTRUCTIONS.txt: this file.
+
+Prereqs
+- Python >=3.10 (tested with 3.13)
+- uv (https://docs.astral.sh/uv/) or pip
+- GPU is optional; CPU will work but train more slowly.
+
+Setup (from this folder)
+1) cd code
+2) uv venv .venv && source .venv/bin/activate
+3) Install deps:
+   uv pip install gymnasium[classic-control] matplotlib numpy pandas scikit-learn seaborn torch tqdm
+
+Reproduce CartPole-SD runs (clean + CTRL eval)
+1) Generate dataset:
+   python scripts/run_ctrl.py dataset --episodes 250 --horizon 200 --output data/SD_dataset_clean.pt
+2) Train BiCoGAN SCM:
+   python scripts/run_ctrl.py train-bicogan --dataset-path data/SD_dataset_clean.pt --output-dir results/cartpole/bicogan
+3) Train D3QN (real-only):
+   python scripts/run_ctrl.py train-d3qn --dataset-path data/SD_dataset_clean.pt --output-dir results/cartpole/d3qn_real
+4) Train D3QN + counterfactual (best setting: cf_sample_frac=0.05):
+   python scripts/run_ctrl.py train-d3qn --dataset-path data/SD_dataset_clean.pt --use-cf --cf-sample-frac 0.05 --bicogan-dir results/cartpole/bicogan --output-dir results/cartpole/d3qn_cf
+5) Train Rainbow baseline:
+   python scripts/run_alt_algos.py rainbow --dataset-path data/SD_dataset_clean.pt --output-dir results/cartpole/rainbow
+6) Generate plots (bar + D3QN curves):
+   python scripts/plot_results.py --rainbow-metrics results/cartpole/rainbow/metrics.json --d3qn-real results/cartpole/d3qn_real/metrics.json --d3qn-cf results/cartpole/d3qn_cf/metrics.json --output-dir results/plots
+   (Or run the one-shot helper: ./run_cartpole.sh)
+
+Outputs to cite in the report
+- results/plots/d3qn_overview.png (loss + eval curves)
+- results/plots/comparison_bar.png (final mean returns for Rainbow, D3QN real, D3QN CF)
