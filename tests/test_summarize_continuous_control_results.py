@@ -195,6 +195,13 @@ def test_summarize_emits_tidy_statistics_and_paired_seed_deltas(
     assert paired_summary["n"] == 2
     assert paired_summary["mean"] == pytest.approx(3.5)
     assert paired_summary["paired_seeds"] == "[0, 1]"
+    assert paired_summary["positive_seeds"] == 2
+    assert paired_summary["negative_seeds"] == 0
+    assert paired_summary["ties"] == 0
+    assert paired_summary["paired_t_p"] is not None
+    assert paired_summary["wilcoxon_p"] is not None
+    assert paired_summary["sign_randomization_p"] == pytest.approx(0.5)
+    assert paired_summary["paired_t_p_holm"] >= paired_summary["paired_t_p"]
 
     d4rl_run = _row(
         outputs["run_results"],

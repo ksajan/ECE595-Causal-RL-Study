@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scipy import stats
 
 MUJOCO_PROTOCOL_FIELDS = (
     "total_timesteps",
@@ -459,6 +460,88 @@ def _summary_statistics(
     }
 
 
+def _finite_pvalue(value: float) -> float:
+    """Convert degenerate numerical-test output to a conservative p-value."""
+
+    return float(value) if np.isfinite(value) else 1.0
+
+
+def _sign_randomization_pvalue(values: np.ndarray, seed: int) -> float:
+    """Compute a deterministic two-sided paired sign-randomization p-value."""
+
+    observed = abs(float(values.mean()))
+    count = 1 << values.size
+    if values.size <= 16:
+        masks = np.arange(count, dtype=np.uint32)[:, None]
+        bits = (masks >> np.arange(values.size, dtype=np.uint32)) & 1
+        signs = bits.astype(np.float64) * 2.0 - 1.0
+        randomized = np.abs((signs * values).mean(axis=1))
+        return float(np.count_nonzero(randomized >= observed - 1e-12) / count)
+    samples = 100_000
+    rng = np.random.default_rng(seed)
+    signs = rng.choice((-1.0, 1.0), size=(samples, values.size))
+    randomized = np.abs((signs * values).mean(axis=1))
+    return float((np.count_nonzero(randomized >= observed - 1e-12) + 1) / (samples + 1))
+
+
+def _paired_inference(values: Sequence[float], seed: int) -> dict[str, Any]:
+    """Return paired tests and sign counts over independent training seeds."""
+
+    array = np.asarray(values, dtype=np.float64)
+    result: dict[str, Any] = {
+        "positive_seeds": int(np.count_nonzero(array > 0.0)),
+        "negative_seeds": int(np.count_nonzero(array < 0.0)),
+        "ties": int(np.count_nonzero(array == 0.0)),
+        "paired_t_p": None,
+        "wilcoxon_p": None,
+        "sign_randomization_p": None,
+        "paired_t_p_holm": None,
+        "wilcoxon_p_holm": None,
+        "sign_randomization_p_holm": None,
+    }
+    if array.size < 2:
+        return result
+    try:
+        wilcoxon = _finite_pvalue(float(stats.wilcoxon(array).pvalue))
+    except ValueError:
+        wilcoxon = 1.0
+    result.update(
+        {
+            "paired_t_p": _finite_pvalue(float(stats.ttest_1samp(array, 0.0).pvalue)),
+            "wilcoxon_p": wilcoxon,
+            "sign_randomization_p": _sign_randomization_pvalue(array, seed),
+        }
+    )
+    return result
+
+
+def _holm_adjust(p_values: Sequence[float]) -> list[float]:
+    """Apply Holm step-down family-wise error correction."""
+
+    values = np.asarray(p_values, dtype=np.float64)
+    order = np.argsort(values)
+    adjusted = np.ones(values.size, dtype=np.float64)
+    running = 0.0
+    for rank, index in enumerate(order):
+        running = max(running, min(1.0, values[index] * (values.size - rank)))
+        adjusted[index] = running
+    return [float(value) for value in adjusted]
+
+
+def _add_holm_adjustments(rows: list[dict[str, Any]]) -> None:
+    """Adjust each test across task/variant contrasts in one protocol family."""
+
+    families: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        families[(row["domain"], row["protocol_id"], row["metric"])].append(row)
+    for family_rows in families.values():
+        for field in ("paired_t_p", "wilcoxon_p", "sign_randomization_p"):
+            eligible = [row for row in family_rows if row[field] is not None]
+            adjusted = _holm_adjust([float(row[field]) for row in eligible])
+            for row, value in zip(eligible, adjusted, strict=True):
+                row[f"{field}_holm"] = value
+
+
 def aggregate_rows(
     run_rows: Sequence[Mapping[str, Any]], bootstrap_samples: int, bootstrap_seed: int
 ) -> list[dict[str, Any]]:
@@ -624,8 +707,10 @@ def paired_summary_rows(
                 "intervention_scale": first["intervention_scale"],
                 "paired_seeds": json.dumps(sorted(int(row["seed"]) for row in rows)),
                 **_summary_statistics(values, bootstrap_samples, seed),
+                **_paired_inference(values, seed),
             }
         )
+    _add_holm_adjustments(summaries)
     return summaries
 
 
