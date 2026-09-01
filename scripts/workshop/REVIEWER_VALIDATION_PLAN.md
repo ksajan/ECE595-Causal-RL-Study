@@ -128,6 +128,13 @@ baseline gate was restarted with three 256-unit hidden layers,
 augmentation seed defines one immutable offline dataset, while paired learner
 seeds vary initialization and minibatch sampling.
 
+The validated real-only seed 0 artifact is retained as the first publication
+baseline because its comparison-defining protocol is identical to the full-queue
+real-only configuration. The full real-only queue therefore runs seeds 1--9,
+while each synthetic condition runs seeds 0--9. Summaries merge the gate and
+full roots, yielding ten paired learner seeds without rerunning an identical
+seed-0 baseline.
+
 ## Claim boundary
 
 These experiments test whether exact or simulator-residual one-step

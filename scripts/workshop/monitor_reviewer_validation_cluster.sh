@@ -59,9 +59,13 @@ poll_once() {
             "$local_root/raw/d4rl/"
     done
 
+    d4rl_roots=(--d4rl-root "$local_root/raw/d4rl")
+    if [[ -d $local_root/raw/d4rl_gate ]]; then
+        d4rl_roots+=(--d4rl-root "$local_root/raw/d4rl_gate")
+    fi
     uv run python scripts/workshop/summarize_continuous_control_results.py \
         --mujoco-root "$local_root/raw/mujoco" \
-        --d4rl-root "$local_root/raw/d4rl" \
+        "${d4rl_roots[@]}" \
         --output-dir "$local_root/summary_current"
 }
 
