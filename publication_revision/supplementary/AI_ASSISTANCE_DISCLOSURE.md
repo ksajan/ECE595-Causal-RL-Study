@@ -46,7 +46,7 @@ The final Luna citation-audit prompt was:
 > bibliography; write a pass/fail audit with exact fixes.
 
 The first Sol statistics/design review was asked to independently audit the
-matched 30-seed coupling-control study, recompute the registered paired
+matched 30-seed coupling-control study, recompute the manifest-specified paired
 contrasts from raw seed artifacts, inspect coupling and provenance, distinguish
 raw from Holm-adjusted inference, and provide publication-safe wording without
 editing source or results.

@@ -139,7 +139,7 @@ positive threshold. All other outcomes are labeled inconclusive.
 Before confirmation:
 
 - all result files must have one source hash and identical non-seed configs;
-- the complete preregistered seed set must be present exactly once;
+- the complete manifest-specified seed set must be present exactly once;
 - no NaN/Inf losses, predictions, or returns;
 - model validation must split whole trajectories, not adjacent transitions;
 - held-out alternative-action CF error must be reported against the exact
@@ -162,8 +162,8 @@ latent is not treated as a predictive-quality metric.
 ## Direct comparison with Lu et al.
 
 Figure 2(a) of Lu et al. is the only source for their CartPole-SD returns. At
-5,000 samples, visual digitization to the nearest five return points gives
-approximately 280 for D3QN and 310 for CTRLg. These values have no reported
+5,000 samples, vector-path inspection rounded to the nearest ten return points
+gives approximately 260 for D3QN and 310 for CTRLg. These values have no reported
 training-seed uncertainty and are presented only as descriptive reference
 points. No cross-paper significance test is performed.
 
@@ -180,17 +180,17 @@ seeds as the inferential units.
 
 ## Confirmatory inference
 
-The registered oracle-study contrasts and practical thresholds are specified in
+The manifest-specified oracle-study contrasts and practical thresholds are specified in
 the preceding section and frozen in
 `scripts/revision/oracle_confirmatory_manifest.json`.
 
-A learned-CF contrast is added only if its generator passes every registered
+A learned-CF contrast is added only if its generator passes every manifest-specified
 model-quality gate on every development seed.
 
 The training seed is the experimental unit. Report mean and standard deviation,
 median and interquartile range, seed-level paired deltas, 95% Student-t and
 paired bootstrap intervals, paired t-test, Wilcoxon signed-rank test, paired
-sign-randomization test, and Holm-adjusted p-values across the four registered
+sign-randomization test, and Holm-adjusted p-values across the four manifest-specified
 contrasts. Evaluation episodes are not treated as independent training runs.
 
 ## Manuscript exclusions
