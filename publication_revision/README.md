@@ -28,5 +28,5 @@ Verify the archive contents from this directory with:
 sha256sum -c SHA256SUMS.txt
 ```
 
-The public archival tag is `claramas-2026-revision-v1` in
+The public archival tag is `claramas-2026-revision-v2` in
 `https://github.com/ksajan/ECE595-Causal-RL-Study`.

@@ -140,7 +140,7 @@ summary scripts, statistical outputs, tests, and figure-generation code. We use
 external registration. The remote checkout did not expose Git metadata, so the
 source hashes and archived files are the provenance record.
 The camera-ready manuscript points to the versioned public snapshot at
-`https://github.com/ksajan/ECE595-Causal-RL-Study/tree/claramas-2026-revision-v1/publication_revision`.
+`https://github.com/ksajan/ECE595-Causal-RL-Study/tree/claramas-2026-revision-v2/publication_revision`.
 
 ## Additional publication-compliance changes
 
