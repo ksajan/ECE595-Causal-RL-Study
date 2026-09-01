@@ -1,0 +1,59 @@
+{
+  "artifact_schema": "ctrl-cartpole-coupling-control-v1",
+  "experiment_name": "cartpole_coupling_control",
+  "seeds": [
+    1030, 1031, 1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039,
+    1040, 1041, 1042, 1043, 1044, 1045, 1046, 1047, 1048, 1049,
+    1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057, 1058, 1059
+  ],
+  "config": {
+    "dataset_trials": 250,
+    "trial_horizon": 20,
+    "stop_on_termination": true,
+    "state_noise_std": 0.05,
+    "action_noise_std": 0.05,
+    "noise_semantics": "process",
+    "train_steps": 5000,
+    "batch_size": 256,
+    "gamma": 0.99,
+    "learning_rate": 0.0001,
+    "target_tau": 0.005,
+    "target_update_interval": 0,
+    "cql_alpha": 0.05,
+    "cf_batch_fraction": 0.5,
+    "q_width": 256,
+    "q_depth": 2,
+    "q_batch_norm": false,
+    "eval_episodes": 100,
+    "eval_horizon": 500,
+    "eval_seed_base": 600000
+  },
+  "arms": ["random", "real", "fresh_independent", "fresh_shared", "oracle_cf"],
+  "evaluation": {
+    "metrics": ["clean", "noisy"],
+    "episodes_are_not_training_replicates": true,
+    "noisy_protocol": "process_noise_stress_test"
+  },
+  "coupling": {
+    "alternatives_per_factual_transition": 10,
+    "fresh_independent_noise": "one new action scalar and state vector per alternative action",
+    "fresh_shared_noise": "one new action scalar and state vector per factual transition, reused across alternatives",
+    "oracle_cf_noise": "reuse the factual action scalar and state vector across alternatives"
+  },
+  "statistics": {
+    "primary": "oracle_cf_minus_fresh_shared_clean",
+    "contrasts": [
+      "oracle_cf_minus_fresh_shared_clean",
+      "oracle_cf_minus_fresh_shared_noisy",
+      "fresh_shared_minus_fresh_independent_clean",
+      "fresh_shared_minus_fresh_independent_noisy"
+    ],
+    "practical_effect_thresholds": {
+      "clean": 25.0,
+      "noisy": 5.0
+    },
+    "bootstrap_samples": 20000,
+    "randomization_samples": 100000,
+    "alpha": 0.05
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "artifact_schema": "ctrl-cartpole-model-gate-summary-v1",
+  "development_only": true,
+  "confirmatory": false,
+  "seeds": [
+    960,
+    961,
+    962,
+    963,
+    964
+  ],
+  "all_registered_gates_passed": false,
+  "per_seed_gates": {
+    "960": {
+      "learned_mse_at_least_20pct_below_fresh_mse": false,
+      "terminal_disagreement_below_0.05": false,
+      "latent_std_each_in_[0.5,2.0]": false,
+      "action_mse_at_least_10pct_below_central_baseline": true
+    },
+    "961": {
+      "learned_mse_at_least_20pct_below_fresh_mse": false,
+      "terminal_disagreement_below_0.05": false,
+      "latent_std_each_in_[0.5,2.0]": false,
+      "action_mse_at_least_10pct_below_central_baseline": false
+    },
+    "962": {
+      "learned_mse_at_least_20pct_below_fresh_mse": false,
+      "terminal_disagreement_below_0.05": false,
+      "latent_std_each_in_[0.5,2.0]": false,
+      "action_mse_at_least_10pct_below_central_baseline": false
+    },
+    "963": {
+      "learned_mse_at_least_20pct_below_fresh_mse": false,
+      "terminal_disagreement_below_0.05": false,
+      "latent_std_each_in_[0.5,2.0]": false,
+      "action_mse_at_least_10pct_below_central_baseline": true
+    },
+    "964": {
+      "learned_mse_at_least_20pct_below_fresh_mse": false,
+      "terminal_disagreement_below_0.05": false,
+      "latent_std_each_in_[0.5,2.0]": false,
+      "action_mse_at_least_10pct_below_central_baseline": true
+    }
+  },
+  "per_seed_metrics": {
+    "960": {
+      "learned_cf_normalized_mse": 4.546121597290039,
+      "fresh_noise_normalized_mse": 0.1771232932806015,
+      "learned_to_fresh_mse_ratio": 25.666424291738984,
+      "terminal_disagreement": 0.6164073550212164,
+      "latent_std_by_dimension": [
+        0.896176815032959,
+        0.4960632622241974,
+        0.31386542320251465,
+        0.424533873796463
+      ],
+      "action_reconstruction_mse": 0.08675824105739594,
+      "central_action_baseline_mse": 0.10049505531787872,
+      "action_to_baseline_mse_ratio": 0.8633085556594652
+    },
+    "961": {
+      "learned_cf_normalized_mse": 4.010533809661865,
+      "fresh_noise_normalized_mse": 0.17134054005146027,
+      "learned_to_fresh_mse_ratio": 23.406800331418037,
+      "terminal_disagreement": 0.4798188874514877,
+      "latent_std_by_dimension": [
+        0.5288069248199463,
+        0.4621637165546417,
+        0.6471688151359558,
+        0.790080726146698
+      ],
+      "action_reconstruction_mse": 0.09465476870536804,
+      "central_action_baseline_mse": 0.10163000971078873,
+      "action_to_baseline_mse_ratio": 0.9313663255049338
+    },
+    "962": {
+      "learned_cf_normalized_mse": 4.257199764251709,
+      "fresh_noise_normalized_mse": 0.16058602929115295,
+      "learned_to_fresh_mse_ratio": 26.51039933575497,
+      "terminal_disagreement": 0.42008196721311475,
+      "latent_std_by_dimension": [
+        0.25454527139663696,
+        0.8341536521911621,
+        0.35825085639953613,
+        0.46633845567703247
+      ],
+      "action_reconstruction_mse": 0.09159491211175919,
+      "central_action_baseline_mse": 0.10076501965522766,
+      "action_to_baseline_mse_ratio": 0.9089951297102463
+    },
+    "963": {
+      "learned_cf_normalized_mse": 3.8576371669769287,
+      "fresh_noise_normalized_mse": 0.18006320297718048,
+      "learned_to_fresh_mse_ratio": 21.423795107464624,
+      "terminal_disagreement": 0.507808564231738,
+      "latent_std_by_dimension": [
+        0.25459498167037964,
+        1.2786977291107178,
+        0.7027775645256042,
+        1.1529265642166138
+      ],
+      "action_reconstruction_mse": 0.08727285265922546,
+      "central_action_baseline_mse": 0.09729218482971191,
+      "action_to_baseline_mse_ratio": 0.8970181193070847
+    },
+    "964": {
+      "learned_cf_normalized_mse": 4.792819023132324,
+      "fresh_noise_normalized_mse": 0.162736713886261,
+      "learned_to_fresh_mse_ratio": 29.45136907755243,
+      "terminal_disagreement": 0.6591176470588235,
+      "latent_std_by_dimension": [
+        1.2534441947937012,
+        0.5514993667602539,
+        0.4072851836681366,
+        0.6674613356590271
+      ],
+      "action_reconstruction_mse": 0.08731444180011749,
+      "central_action_baseline_mse": 0.09898529201745987,
+      "action_to_baseline_mse_ratio": 0.8820951074702718
+    }
+  },
+  "metric_summary": {
+    "learned_cf_normalized_mse": {
+      "mean": 4.292862272262573,
+      "sd": 0.382262706131729,
+      "min": 3.8576371669769287,
+      "max": 4.792819023132324
+    },
+    "fresh_noise_normalized_mse": {
+      "mean": 0.17036995589733123,
+      "sd": 0.00858050467335953,
+      "min": 0.16058602929115295,
+      "max": 0.18006320297718048
+    },
+    "learned_to_fresh_mse_ratio": {
+      "mean": 25.29175762878581,
+      "sd": 3.0594945743639133,
+      "min": 21.423795107464624,
+      "max": 29.45136907755243
+    },
+    "terminal_disagreement": {
+      "mean": 0.5366468841952761,
+      "sd": 0.09875382302225634,
+      "min": 0.42008196721311475,
+      "max": 0.6591176470588235
+    },
+    "action_reconstruction_mse": {
+      "mean": 0.08951904326677322,
+      "sd": 0.00347176381518574,
+      "min": 0.08675824105739594,
+      "max": 0.09465476870536804
+    },
+    "central_action_baseline_mse": {
+      "mean": 0.09983351230621337,
+      "sd": 0.0017110355799391797,
+      "min": 0.09729218482971191,
+      "max": 0.10163000971078873
+    },
+    "action_to_baseline_mse_ratio": {
+      "mean": 0.8965566475304003,
+      "sd": 0.025890221270774182,
+      "min": 0.8633085556594652,
+      "max": 0.9313663255049338
+    }
+  },
+  "interpretation": "Eligible for a learned-CF downstream pilot only if every seed passes; this report is never confirmatory evidence."
+}

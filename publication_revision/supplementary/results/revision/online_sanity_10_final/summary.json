@@ -1,0 +1,143 @@
+{
+  "source_dir": "results/revision/online_sanity_10_final",
+  "seeds": [
+    {
+      "seed": 610,
+      "random_clean": 28.16,
+      "random_ctrl_noisy": 17.91,
+      "best_ep": 800,
+      "best_clean": 455.05,
+      "best_ctrl_noisy_at_best": 56.05,
+      "final_selected_clean": 447.48,
+      "final_selected_ctrl_noisy": 45.37
+    },
+    {
+      "seed": 611,
+      "random_clean": 26.14,
+      "random_ctrl_noisy": 18.3,
+      "best_ep": 600,
+      "best_clean": 500.0,
+      "best_ctrl_noisy_at_best": 51.05,
+      "final_selected_clean": 451.03,
+      "final_selected_ctrl_noisy": 51.88
+    },
+    {
+      "seed": 612,
+      "random_clean": 26.36,
+      "random_ctrl_noisy": 17.84,
+      "best_ep": 400,
+      "best_clean": 500.0,
+      "best_ctrl_noisy_at_best": 46.8,
+      "final_selected_clean": 500.0,
+      "final_selected_ctrl_noisy": 44.63
+    },
+    {
+      "seed": 613,
+      "random_clean": 28.28,
+      "random_ctrl_noisy": 17.18,
+      "best_ep": 700,
+      "best_clean": 426.5,
+      "best_ctrl_noisy_at_best": 51.55,
+      "final_selected_clean": 425.99,
+      "final_selected_ctrl_noisy": 43.21
+    },
+    {
+      "seed": 614,
+      "random_clean": 27.77,
+      "random_ctrl_noisy": 17.67,
+      "best_ep": 400,
+      "best_clean": 500.0,
+      "best_ctrl_noisy_at_best": 45.4,
+      "final_selected_clean": 301.27,
+      "final_selected_ctrl_noisy": 47.51
+    },
+    {
+      "seed": 615,
+      "random_clean": 26.75,
+      "random_ctrl_noisy": 18.51,
+      "best_ep": 500,
+      "best_clean": 500.0,
+      "best_ctrl_noisy_at_best": 41.65,
+      "final_selected_clean": 500.0,
+      "final_selected_ctrl_noisy": 43.95
+    },
+    {
+      "seed": 616,
+      "random_clean": 27.17,
+      "random_ctrl_noisy": 17.37,
+      "best_ep": 300,
+      "best_clean": 498.4,
+      "best_ctrl_noisy_at_best": 24.7,
+      "final_selected_clean": 357.59,
+      "final_selected_ctrl_noisy": 51.26
+    },
+    {
+      "seed": 617,
+      "random_clean": 25.92,
+      "random_ctrl_noisy": 17.21,
+      "best_ep": 800,
+      "best_clean": 500.0,
+      "best_ctrl_noisy_at_best": 49.75,
+      "final_selected_clean": 452.94,
+      "final_selected_ctrl_noisy": 45.45
+    },
+    {
+      "seed": 618,
+      "random_clean": 28.49,
+      "random_ctrl_noisy": 18.68,
+      "best_ep": 400,
+      "best_clean": 500.0,
+      "best_ctrl_noisy_at_best": 30.6,
+      "final_selected_clean": 493.22,
+      "final_selected_ctrl_noisy": 50.55
+    },
+    {
+      "seed": 619,
+      "random_clean": 26.43,
+      "random_ctrl_noisy": 17.96,
+      "best_ep": 800,
+      "best_clean": 364.7,
+      "best_ctrl_noisy_at_best": 52.3,
+      "final_selected_clean": 380.5,
+      "final_selected_ctrl_noisy": 45.03
+    }
+  ],
+  "metrics": {
+    "random_clean": {
+      "n": 10,
+      "mean": 27.147000000000002,
+      "std": 0.961064802994863,
+      "ci95": 0.5956741362710167
+    },
+    "random_ctrl_noisy": {
+      "n": 10,
+      "mean": 17.863000000000003,
+      "std": 0.5230689353336816,
+      "ci95": 0.3242014849510169
+    },
+    "best_clean": {
+      "n": 10,
+      "mean": 474.465,
+      "std": 46.20129898366255,
+      "ci95": 28.635861786772036
+    },
+    "best_ctrl_noisy_at_best": {
+      "n": 10,
+      "mean": 44.985,
+      "std": 10.06385308362999,
+      "ci95": 6.237640765189635
+    },
+    "final_selected_clean": {
+      "n": 10,
+      "mean": 431.00200000000007,
+      "std": 66.11583636147832,
+      "ci95": 40.97901993261321
+    },
+    "final_selected_ctrl_noisy": {
+      "n": 10,
+      "mean": 46.884,
+      "std": 3.213060845984712,
+      "ci95": 1.991475744667757
+    }
+  }
+}
