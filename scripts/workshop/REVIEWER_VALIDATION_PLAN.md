@@ -142,3 +142,8 @@ counterfactual augmentation helps continuous-control SAC and CQL under explicit
 controls. They do not constitute a faithful learned-BiCoGAN CTRL reproduction.
 Task-level claims require the full paired seed matrix; pilot results are
 diagnostic only.
+
+The cluster monitor merges completed artifacts every ten minutes and regenerates
+the statistical summaries. Publication plots and Markdown/LaTeX tables are
+written only when every planned comparison has at least ten paired seeds; failed
+gates delete any partial publication directory.

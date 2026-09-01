@@ -67,6 +67,24 @@ poll_once() {
         --mujoco-root "$local_root/raw/mujoco" \
         "${d4rl_roots[@]}" \
         --output-dir "$local_root/summary_current"
+
+    publication_dir="$local_root/publication_current"
+    gate_log="$local_root/publication_gate.log"
+    if uv run python scripts/workshop/plot_continuous_control_results.py \
+        --summary-dir "$local_root/summary_current" \
+        --output-dir "$publication_dir" >"$gate_log" 2>&1; then
+        if uv run python -m scripts.workshop.render_continuous_control_report \
+            --summary-dir "$local_root/summary_current" \
+            --output-dir "$publication_dir" >>"$gate_log" 2>&1; then
+            echo "[publication] ten-seed figure and report gates passed"
+        else
+            rm -rf "$publication_dir"
+            echo "[publication] report gate failed; see $gate_log"
+        fi
+    else
+        rm -rf "$publication_dir"
+        echo "[publication] waiting for complete ten-paired-seed matrix"
+    fi
 }
 
 while true; do
