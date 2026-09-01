@@ -41,32 +41,42 @@ poll_once() {
     for node in "${nodes[@]}"; do
         host="x-indy-tasigpu${node}.${remote_domain}"
         target="${remote_user}@${host}"
-        status=$(ssh -o BatchMode=yes -o ConnectTimeout=15 "$target" '
+        if ! status=$(ssh -o BatchMode=yes -o ConnectTimeout=15 "$target" '
             cd ~/ece595-revision
             printf "SAC=%s " "$(find results/mujoco_oracle_full -name eval.json 2>/dev/null | wc -l)"
             printf "D4RL=%s " "$(find results/d4rl_cql_full -name evaluation.json 2>/dev/null | wc -l)"
             printf "active=%s " "$(pgrep -af "run_(mujoco_oracle_cf_sac|d4rl_simulator_cf_cql)" | grep -v queue | wc -l)"
             nvidia-smi --query-gpu=utilization.gpu,memory.used \
                 --format=csv,noheader,nounits | awk -F, "{printf \"gpu=%s%% vram=%sMiB\", \$1, \$2}"
-        ')
+        '); then
+            printf 'node%s unavailable; retrying next poll\n' "$node" >&2
+            continue
+        fi
         printf 'node%s %s\n' "$node" "$status"
 
-        rsync -a --prune-empty-dirs --include='*/' --include='*.json' \
+        if ! rsync -a --prune-empty-dirs --include='*/' --include='*.json' \
             --exclude='*' "$target:~/ece595-revision/results/mujoco_oracle_full/" \
-            "$local_root/raw/mujoco/"
-        rsync -a --prune-empty-dirs --include='*/' --include='*.json' \
+            "$local_root/raw/mujoco/"; then
+            printf 'node%s MuJoCo sync failed; retrying next poll\n' "$node" >&2
+        fi
+        if ! rsync -a --prune-empty-dirs --include='*/' --include='*.json' \
             --exclude='*' "$target:~/ece595-revision/results/d4rl_cql_full/" \
-            "$local_root/raw/d4rl/"
+            "$local_root/raw/d4rl/"; then
+            printf 'node%s D4RL sync failed; retrying next poll\n' "$node" >&2
+        fi
     done
 
     d4rl_roots=(--d4rl-root "$local_root/raw/d4rl")
     if [[ -d $local_root/raw/d4rl_gate ]]; then
         d4rl_roots+=(--d4rl-root "$local_root/raw/d4rl_gate")
     fi
-    uv run python scripts/workshop/summarize_continuous_control_results.py \
+    if ! uv run python scripts/workshop/summarize_continuous_control_results.py \
         --mujoco-root "$local_root/raw/mujoco" \
         "${d4rl_roots[@]}" \
-        --output-dir "$local_root/summary_current"
+        --output-dir "$local_root/summary_current"; then
+        echo "[summary] failed; preserving the previous valid summary" >&2
+        return
+    fi
 
     publication_dir="$local_root/publication_current"
     gate_log="$local_root/publication_gate.log"
