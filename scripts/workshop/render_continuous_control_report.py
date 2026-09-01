@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
@@ -54,6 +55,17 @@ def validate_aggregate_cells(
                 n = int(matches[0]["n"])
                 if n < min_seeds:
                     problems.append(f"{label}: n={n}, requires n>={min_seeds}")
+                    continue
+                try:
+                    seeds = [int(seed) for seed in json.loads(matches[0]["seeds"])]
+                except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+                    problems.append(f"{label}: invalid seeds field")
+                    continue
+                if len(seeds) != n or len(set(seeds)) != n:
+                    problems.append(f"{label}: seed identities do not match n={n}")
+                    continue
+                if not set(range(min_seeds)).issubset(seeds):
+                    problems.append(f"{label}: missing required seeds 0--{min_seeds - 1}")
                     continue
                 validated[(domain, task, variant)] = matches[0]
     if problems:

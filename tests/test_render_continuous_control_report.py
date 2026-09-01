@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 from pathlib import Path
 
 import pytest
@@ -30,6 +31,7 @@ def _summaries(n: int = 10) -> tuple[list[dict[str, str]], list[dict[str, str]]]
                         "variant": variant,
                         "metric": str(spec["metric"]),
                         "n": str(n),
+                        "seeds": json.dumps(list(range(n))),
                         "mean": str(100 + index),
                         "std": "5.0",
                     }
@@ -42,6 +44,7 @@ def _summaries(n: int = 10) -> tuple[list[dict[str, str]], list[dict[str, str]]]
                         "variant": variant,
                         "metric": str(spec["metric"]),
                         "n": str(n),
+                        "paired_seeds": json.dumps(list(range(n))),
                         "mean": str(index + 1),
                         "bootstrap_ci95_low": str(index + 0.5),
                         "bootstrap_ci95_high": str(index + 1.5),

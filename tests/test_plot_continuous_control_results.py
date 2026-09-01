@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,7 @@ def _rows(n: int = 10) -> list[dict[str, str]]:
                         "variant": variant,
                         "metric": str(spec["metric"]),
                         "n": str(n),
+                        "paired_seeds": json.dumps(list(range(n))),
                         "mean": str(mean),
                         "bootstrap_ci95_low": str(mean - 0.5),
                         "bootstrap_ci95_high": str(mean + 0.5),
@@ -43,6 +45,13 @@ def test_gate_rejects_missing_and_underpowered_cells() -> None:
     rows = _rows(n=9)
     rows.pop()
     with pytest.raises(RuntimeError, match=r"requires n>=10"):
+        validate_publication_cells(rows, min_seeds=10)
+
+
+def test_gate_rejects_substituted_seed_identity() -> None:
+    rows = _rows()
+    rows[0]["paired_seeds"] = json.dumps(list(range(1, 11)))
+    with pytest.raises(RuntimeError, match="missing required seeds 0--9"):
         validate_publication_cells(rows, min_seeds=10)
 
 

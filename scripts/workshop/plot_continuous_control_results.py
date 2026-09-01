@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
@@ -86,6 +87,20 @@ def validate_publication_cells(
                 if n < min_seeds:
                     problems.append(f"{label}: n={n}, requires n>={min_seeds}")
                     continue
+                try:
+                    paired_seeds = [int(seed) for seed in json.loads(row["paired_seeds"])]
+                except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+                    problems.append(f"{label}: invalid paired_seeds field")
+                    continue
+                if len(paired_seeds) != n or len(set(paired_seeds)) != n:
+                    problems.append(f"{label}: paired seed identities do not match n={n}")
+                    continue
+                expected_seeds = set(range(min_seeds))
+                if not expected_seeds.issubset(paired_seeds):
+                    problems.append(
+                        f"{label}: missing required seeds 0--{min_seeds - 1}"
+                    )
+                    continue
                 low = float(row["bootstrap_ci95_low"])
                 mean = float(row["mean"])
                 high = float(row["bootstrap_ci95_high"])
@@ -97,6 +112,7 @@ def validate_publication_cells(
                         "task": task,
                         "variant": variant,
                         "n": n,
+                        "paired_seeds": paired_seeds,
                         "mean": mean,
                         "low": low,
                         "high": high,
