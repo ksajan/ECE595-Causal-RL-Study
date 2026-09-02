@@ -21,6 +21,18 @@ EXPECTED_CELLS = {
         "metric": "normalized_d4rl_score",
     },
 }
+EXPECTED_MATCHED_CONTROLS = {
+    "mujoco_sac": {
+        "tasks": ("HalfCheetah-v4", "Hopper-v4", "Walker2d-v4", "Ant-v4"),
+        "contrast": "oracle_cf_minus_duplicate",
+        "metric": "return",
+    },
+    "d4rl_cql": {
+        "tasks": ("halfcheetah-medium-v2", "hopper-medium-v2"),
+        "contrast": "factual_residual_minus_fresh_residual",
+        "metric": "normalized_d4rl_score",
+    },
+}
 
 DISPLAY = {
     "HalfCheetah-v4": "HalfCheetah",
@@ -88,12 +100,16 @@ def validate_publication_cells(
                     problems.append(f"{label}: n={n}, requires n>={min_seeds}")
                     continue
                 try:
-                    paired_seeds = [int(seed) for seed in json.loads(row["paired_seeds"])]
+                    paired_seeds = [
+                        int(seed) for seed in json.loads(row["paired_seeds"])
+                    ]
                 except (KeyError, TypeError, ValueError, json.JSONDecodeError):
                     problems.append(f"{label}: invalid paired_seeds field")
                     continue
                 if len(paired_seeds) != n or len(set(paired_seeds)) != n:
-                    problems.append(f"{label}: paired seed identities do not match n={n}")
+                    problems.append(
+                        f"{label}: paired seed identities do not match n={n}"
+                    )
                     continue
                 expected_seeds = set(range(min_seeds))
                 if not expected_seeds.issubset(paired_seeds):
@@ -105,7 +121,9 @@ def validate_publication_cells(
                 mean = float(row["mean"])
                 high = float(row["bootstrap_ci95_high"])
                 if not low <= mean <= high:
-                    problems.append(f"{label}: confidence interval does not contain mean")
+                    problems.append(
+                        f"{label}: confidence interval does not contain mean"
+                    )
                     continue
                 domain_rows.append(
                     {
@@ -122,6 +140,70 @@ def validate_publication_cells(
     if problems:
         detail = "\n".join(f"- {problem}" for problem in problems)
         raise RuntimeError(f"Publication figure gate failed:\n{detail}")
+    return validated
+
+
+def validate_matched_control_cells(
+    rows: Sequence[Mapping[str, str]], min_seeds: int
+) -> dict[str, list[dict[str, float | str]]]:
+    """Require each causal-minus-matched-control contrast at exact seed IDs."""
+
+    if min_seeds < 2:
+        raise ValueError("min_seeds must be at least 2")
+    validated: dict[str, list[dict[str, float | str]]] = {}
+    problems: list[str] = []
+    for domain, spec in EXPECTED_MATCHED_CONTROLS.items():
+        domain_rows: list[dict[str, float | str]] = []
+        for task in spec["tasks"]:
+            matches = [
+                row
+                for row in rows
+                if row.get("domain") == domain
+                and row.get("task") == task
+                and row.get("contrast") == spec["contrast"]
+                and row.get("metric") == spec["metric"]
+            ]
+            label = f"{domain}/{task}/{spec['contrast']}/{spec['metric']}"
+            if len(matches) != 1:
+                problems.append(f"{label}: expected one row, found {len(matches)}")
+                continue
+            row = matches[0]
+            n = int(row["n"])
+            if n < min_seeds:
+                problems.append(f"{label}: n={n}, requires n>={min_seeds}")
+                continue
+            try:
+                paired_seeds = [int(seed) for seed in json.loads(row["paired_seeds"])]
+            except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+                problems.append(f"{label}: invalid paired_seeds field")
+                continue
+            if len(paired_seeds) != n or len(set(paired_seeds)) != n:
+                problems.append(f"{label}: paired seed identities do not match n={n}")
+                continue
+            if not set(range(min_seeds)).issubset(paired_seeds):
+                problems.append(f"{label}: missing required seeds 0--{min_seeds - 1}")
+                continue
+            low = float(row["bootstrap_ci95_low"])
+            mean = float(row["mean"])
+            high = float(row["bootstrap_ci95_high"])
+            if not low <= mean <= high:
+                problems.append(f"{label}: confidence interval does not contain mean")
+                continue
+            domain_rows.append(
+                {
+                    "task": task,
+                    "contrast": str(spec["contrast"]),
+                    "n": n,
+                    "paired_seeds": paired_seeds,
+                    "mean": mean,
+                    "low": low,
+                    "high": high,
+                }
+            )
+        validated[domain] = domain_rows
+    if problems:
+        detail = "\n".join(f"- {problem}" for problem in problems)
+        raise RuntimeError(f"Matched-control publication gate failed:\n{detail}")
     return validated
 
 
@@ -147,7 +229,9 @@ def plot_paired_effects(
             for index, variant in enumerate(spec["variants"])
         }
         for variant in spec["variants"]:
-            selected = {str(row["task"]): row for row in rows if row["variant"] == variant}
+            selected = {
+                str(row["task"]): row for row in rows if row["variant"] == variant
+            }
             ys = [index + offsets[variant] for index in range(len(spec["tasks"]))]
             means = [float(selected[task]["mean"]) for task in spec["tasks"]]
             lower = [
@@ -168,7 +252,9 @@ def plot_paired_effects(
                 label=DISPLAY[variant],
             )
         axis.axvline(0.0, color="#111827", linewidth=1, linestyle="--")
-        axis.set_yticks(range(len(spec["tasks"])), [DISPLAY[task] for task in spec["tasks"]])
+        axis.set_yticks(
+            range(len(spec["tasks"])), [DISPLAY[task] for task in spec["tasks"]]
+        )
         axis.invert_yaxis()
         axis.set_title(title)
         axis.set_xlabel(xlabel)
@@ -177,6 +263,59 @@ def plot_paired_effects(
     fig.suptitle("Paired continuous-control effects with 95% bootstrap intervals")
     png_path = output_dir / "continuous_control_paired_effects.png"
     pdf_path = output_dir / "continuous_control_paired_effects.pdf"
+    fig.savefig(png_path, dpi=220, bbox_inches="tight")
+    fig.savefig(pdf_path, bbox_inches="tight")
+    plt.close(fig)
+    return png_path, pdf_path
+
+
+def plot_matched_control_effects(
+    validated: Mapping[str, Sequence[Mapping[str, float | str]]],
+    output_dir: Path,
+) -> tuple[Path, Path]:
+    """Plot intervention-arm effects against matched augmentation controls."""
+
+    import matplotlib.pyplot as plt
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.8), constrained_layout=True)
+    panels = (
+        (
+            "mujoco_sac",
+            "Online SAC",
+            "Oracle CF minus duplicate-replay return",
+            "#0072B2",
+        ),
+        (
+            "d4rl_cql",
+            "Offline CQL",
+            "Factual minus fresh-residual normalized score",
+            "#009E73",
+        ),
+    )
+    for axis, (domain, title, xlabel, color) in zip(axes, panels, strict=True):
+        tasks = EXPECTED_MATCHED_CONTROLS[domain]["tasks"]
+        rows = {str(row["task"]): row for row in validated[domain]}
+        means = [float(rows[task]["mean"]) for task in tasks]
+        lower = [mean - float(rows[task]["low"]) for task, mean in zip(tasks, means)]
+        upper = [float(rows[task]["high"]) - mean for task, mean in zip(tasks, means)]
+        axis.errorbar(
+            means,
+            range(len(tasks)),
+            xerr=[lower, upper],
+            fmt="o",
+            capsize=3,
+            color=color,
+        )
+        axis.axvline(0.0, color="#111827", linewidth=1, linestyle="--")
+        axis.set_yticks(range(len(tasks)), [DISPLAY[task] for task in tasks])
+        axis.invert_yaxis()
+        axis.set_title(title)
+        axis.set_xlabel(xlabel)
+        axis.grid(axis="x", color="#D1D5DB", linewidth=0.6)
+    fig.suptitle("Matched augmentation-control effects with 95% bootstrap intervals")
+    png_path = output_dir / "continuous_control_matched_controls.png"
+    pdf_path = output_dir / "continuous_control_matched_controls.pdf"
     fig.savefig(png_path, dpi=220, bbox_inches="tight")
     fig.savefig(pdf_path, bbox_inches="tight")
     plt.close(fig)
@@ -200,10 +339,15 @@ def main() -> None:
     rows = load_paired_summary(args.summary_dir / "paired_summary.csv")
     try:
         validated = validate_publication_cells(rows, args.min_seeds)
+        matched = validate_matched_control_cells(
+            load_paired_summary(args.summary_dir / "matched_control_summary.csv"),
+            args.min_seeds,
+        )
     except RuntimeError as exc:
         raise SystemExit(str(exc)) from None
     png_path, pdf_path = plot_paired_effects(validated, args.output_dir)
-    print(f"[plot] wrote {png_path} and {pdf_path}")
+    matched_png, matched_pdf = plot_matched_control_effects(matched, args.output_dir)
+    print(f"[plot] wrote {png_path}, {pdf_path}, {matched_png}, and {matched_pdf}")
 
 
 if __name__ == "__main__":

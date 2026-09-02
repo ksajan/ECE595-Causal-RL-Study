@@ -11,9 +11,22 @@ from pathlib import Path
 from scripts.workshop.plot_continuous_control_results import (
     DISPLAY,
     EXPECTED_CELLS,
+    EXPECTED_MATCHED_CONTROLS,
     load_paired_summary,
+    validate_matched_control_cells,
     validate_publication_cells,
 )
+
+MATCHED_CONTROL_LABELS = {
+    "oracle_cf_minus_duplicate": "Oracle CF minus duplicate replay",
+    "factual_residual_minus_fresh_residual": (
+        "Factual-noise minus fresh-noise residual"
+    ),
+}
+MATCHED_CONTROL_LATEX_LABELS = {
+    "oracle_cf_minus_duplicate": "Oracle CF $-$ duplicate",
+    "factual_residual_minus_fresh_residual": "Factual $-$ fresh residual",
+}
 
 
 def _load_csv(path: Path) -> list[dict[str, str]]:
@@ -65,7 +78,9 @@ def validate_aggregate_cells(
                     problems.append(f"{label}: seed identities do not match n={n}")
                     continue
                 if not set(range(min_seeds)).issubset(seeds):
-                    problems.append(f"{label}: missing required seeds 0--{min_seeds - 1}")
+                    problems.append(
+                        f"{label}: missing required seeds 0--{min_seeds - 1}"
+                    )
                     continue
                 validated[(domain, task, variant)] = matches[0]
     if problems:
@@ -107,9 +122,25 @@ def _paired_lookup(
     }
 
 
+def _matched_lookup(
+    rows: Sequence[Mapping[str, str]],
+) -> dict[tuple[str, str], Mapping[str, str]]:
+    """Index validated matched-control rows by domain and task."""
+
+    return {
+        (row["domain"], row["task"]): row
+        for row in rows
+        if row["domain"] in EXPECTED_MATCHED_CONTROLS
+        and row["task"] in EXPECTED_MATCHED_CONTROLS[row["domain"]]["tasks"]
+        and row["contrast"] == EXPECTED_MATCHED_CONTROLS[row["domain"]]["contrast"]
+        and row["metric"] == EXPECTED_MATCHED_CONTROLS[row["domain"]]["metric"]
+    }
+
+
 def render_markdown(
     aggregate: Mapping[tuple[str, str, str], Mapping[str, str]],
     paired: Mapping[tuple[str, str, str], Mapping[str, str]],
+    matched: Mapping[tuple[str, str], Mapping[str, str]],
 ) -> str:
     """Render an auditable report without automatic superiority claims."""
 
@@ -179,6 +210,51 @@ def render_markdown(
         lines.extend(["", "Interval diagnostics: " + "; ".join(labels) + ".", ""])
     lines.extend(
         [
+            "## Matched augmentation controls",
+            "",
+            (
+                "These direct contrasts isolate each intervention-based augmentation "
+                "arm from its matched data-volume or noise-resampling control. They "
+                "are operational contrasts and do not by themselves prove causal "
+                "identification."
+            ),
+            "",
+            (
+                "| Domain | Task | Contrast | n | Paired delta [95% CI] | "
+                "+/-/ties | Holm p (t/W/R) |"
+            ),
+            "|---|---|---|---:|---:|---:|---:|",
+        ]
+    )
+    for domain, heading in (("mujoco_sac", "Online SAC"), ("d4rl_cql", "Offline CQL")):
+        spec = EXPECTED_MATCHED_CONTROLS[domain]
+        for task in spec["tasks"]:
+            effect = matched[(domain, task)]
+            interval = (
+                f"{_fmt(effect['mean'])} "
+                f"[{_fmt(effect['bootstrap_ci95_low'])}, "
+                f"{_fmt(effect['bootstrap_ci95_high'])}]"
+            )
+            signs = (
+                f"{effect['positive_seeds']}/{effect['negative_seeds']}/"
+                f"{effect['ties']}"
+            )
+            pvalues = "/".join(
+                _fmt(effect[field])
+                for field in (
+                    "paired_t_p_holm",
+                    "wilcoxon_p_holm",
+                    "sign_randomization_p_holm",
+                )
+            )
+            lines.append(
+                f"| {heading} | {DISPLAY[task]} | "
+                f"{MATCHED_CONTROL_LABELS[str(spec['contrast'])]} | {effect['n']} | "
+                f"{interval} | {signs} | {pvalues} |"
+            )
+    lines.append("")
+    lines.extend(
+        [
             (
                 "These experiments isolate simulator-based one-step augmentation. "
                 "They are not a learned-BiCoGAN CTRL reproduction, and a confidence "
@@ -194,6 +270,7 @@ def render_markdown(
 def render_latex(
     aggregate: Mapping[tuple[str, str, str], Mapping[str, str]],
     paired: Mapping[tuple[str, str, str], Mapping[str, str]],
+    matched: Mapping[tuple[str, str], Mapping[str, str]],
 ) -> str:
     """Render compact LaTeX tables for optional appendix inclusion."""
 
@@ -230,8 +307,37 @@ def render_latex(
                     f"{task_name} & {DISPLAY[variant]} & {_fmt(arm['mean'])} & "
                     f"{_fmt(effect['mean'])} "
                     f"[{_fmt(effect['bootstrap_ci95_low'])}, "
-                    f"{_fmt(effect['bootstrap_ci95_high'])}] \\\\")
+                    f"{_fmt(effect['bootstrap_ci95_high'])}] \\\\"
+                )
         lines.extend(["\\bottomrule", "\\end{tabular}", "\\end{table}", ""])
+    lines.extend(
+        [
+            "\\begin{table}[t]",
+            "\\centering",
+            "\\small",
+            (
+                "\\caption{Matched augmentation-control effects; mean paired "
+                "difference with 95\\% bootstrap interval.}"
+            ),
+            "\\label{tab:matched_control_paired}",
+            "\\begin{tabular}{lll}",
+            "\\toprule",
+            "Domain and task & Contrast & $\\Delta$ [95\\% CI] \\\\",
+            "\\midrule",
+        ]
+    )
+    for domain, heading in (("mujoco_sac", "SAC"), ("d4rl_cql", "CQL")):
+        spec = EXPECTED_MATCHED_CONTROLS[domain]
+        for task in spec["tasks"]:
+            effect = matched[(domain, task)]
+            lines.append(
+                f"{heading} {DISPLAY[task]} & "
+                f"{MATCHED_CONTROL_LATEX_LABELS[str(spec['contrast'])]} & "
+                f"{_fmt(effect['mean'])} "
+                f"[{_fmt(effect['bootstrap_ci95_low'])}, "
+                f"{_fmt(effect['bootstrap_ci95_high'])}] \\\\"
+            )
+    lines.extend(["\\bottomrule", "\\end{tabular}", "\\end{table}", ""])
     return "\n".join(lines)
 
 
@@ -240,16 +346,19 @@ def render_report(summary_dir: Path, output_dir: Path, min_seeds: int = 10) -> N
 
     paired_rows = load_paired_summary(summary_dir / "paired_summary.csv")
     validate_publication_cells(paired_rows, min_seeds)
+    matched_rows = load_paired_summary(summary_dir / "matched_control_summary.csv")
+    validate_matched_control_cells(matched_rows, min_seeds)
     aggregate = validate_aggregate_cells(
         _load_csv(summary_dir / "aggregate_results.csv"), min_seeds
     )
     paired = _paired_lookup(paired_rows)
+    matched = _matched_lookup(matched_rows)
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "continuous_control_results.md").write_text(
-        render_markdown(aggregate, paired), encoding="utf-8"
+        render_markdown(aggregate, paired, matched), encoding="utf-8"
     )
     (output_dir / "continuous_control_tables.tex").write_text(
-        render_latex(aggregate, paired), encoding="utf-8"
+        render_latex(aggregate, paired, matched), encoding="utf-8"
     )
 
 

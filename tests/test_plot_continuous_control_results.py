@@ -8,7 +8,10 @@ import pytest
 
 from scripts.workshop.plot_continuous_control_results import (
     EXPECTED_CELLS,
+    EXPECTED_MATCHED_CONTROLS,
+    plot_matched_control_effects,
     plot_paired_effects,
+    validate_matched_control_cells,
     validate_publication_cells,
 )
 
@@ -32,6 +35,27 @@ def _rows(n: int = 10) -> list[dict[str, str]]:
                         "bootstrap_ci95_high": str(mean + 0.5),
                     }
                 )
+    return rows
+
+
+def _matched_rows(n: int = 10) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for domain, spec in EXPECTED_MATCHED_CONTROLS.items():
+        for index, task in enumerate(spec["tasks"]):
+            mean = float(index + 1)
+            rows.append(
+                {
+                    "domain": domain,
+                    "task": task,
+                    "contrast": str(spec["contrast"]),
+                    "metric": str(spec["metric"]),
+                    "n": str(n),
+                    "paired_seeds": json.dumps(list(range(n))),
+                    "mean": str(mean),
+                    "bootstrap_ci95_low": str(mean - 0.5),
+                    "bootstrap_ci95_high": str(mean + 0.5),
+                }
+            )
     return rows
 
 
@@ -60,6 +84,20 @@ def test_plot_writes_png_and_pdf(tmp_path: Path) -> None:
     png_path, pdf_path = plot_paired_effects(validated, tmp_path)
     assert png_path.stat().st_size > 1_000
     assert pdf_path.stat().st_size > 1_000
+
+
+def test_matched_control_gate_and_plot_require_complete_seed_matrix(
+    tmp_path: Path,
+) -> None:
+    validated = validate_matched_control_cells(_matched_rows(), min_seeds=10)
+    assert len(validated["mujoco_sac"]) == 4
+    assert len(validated["d4rl_cql"]) == 2
+    png_path, pdf_path = plot_matched_control_effects(validated, tmp_path)
+    assert png_path.stat().st_size > 1_000
+    assert pdf_path.stat().st_size > 1_000
+
+    with pytest.raises(RuntimeError, match=r"requires n>=10"):
+        validate_matched_control_cells(_matched_rows(n=9), min_seeds=10)
 
 
 def test_current_csv_shape_can_be_read_by_dict_reader(tmp_path: Path) -> None:

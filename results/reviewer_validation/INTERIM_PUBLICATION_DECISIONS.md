@@ -24,6 +24,13 @@ paired tests are marginal (`t` p=0.0630, Wilcoxon p=0.0840,
 sign-randomization p=0.0684) and all three Holm-adjusted p-values exceed 0.50.
 This test dependence does not support a task-level benefit or harm claim.
 
+The direct oracle-CF minus duplicate-replay contrast is +374.80 return with a
+95% paired bootstrap interval of [+37.24, +719.80] (7 positive and 3 negative
+seed differences). However, its raw tests do not cross 0.05 and the
+Holm-adjusted p-values are 0.291, 0.523, and 0.313. This comparison indicates
+that oracle CF avoids the degradation seen from duplicate replay; it does not
+show that oracle CF improves on real-only training.
+
 **Publication decision:** keep Walker2d and the broader continuous-control
 matrix out of revision v2. The result does not answer the reviewer's concern
 more strongly than withdrawing the former underpowered cross-domain claim.
@@ -46,6 +53,12 @@ All three paired contrasts are detectable after Holm correction, but their
 absolute effects are below 0.5 normalized score points. The factual,
 fresh-noise, and simulator variants are also too similar to attribute this
 small gain specifically to counterfactual noise reuse.
+
+The direct factual-residual minus fresh-residual contrast confirms this: +0.041
+normalized score with a 95% paired bootstrap interval of [-0.095, +0.185]
+(6 positive and 4 negative seed differences). The corresponding Holm-adjusted
+p-values are 0.597, 0.625, and 0.602, providing no evidence that reusing the
+factual residual is better than drawing a fresh residual in this task.
 
 **Publication decision:** do not reopen revision v2 for this result. It verifies
 that the corrected CQL baseline is functional, but the augmentation effect is

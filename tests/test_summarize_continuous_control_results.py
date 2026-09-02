@@ -251,6 +251,80 @@ def test_pairing_uses_only_matching_task_seed_and_protocol(tmp_path: Path) -> No
     assert json.loads((output / "paired_deltas.json").read_text()) == []
 
 
+def test_matched_controls_report_causal_minus_noncausal_deltas(
+    tmp_path: Path,
+) -> None:
+    mujoco = tmp_path / "mujoco"
+    d4rl = tmp_path / "d4rl"
+    output = tmp_path / "summary"
+    for seed, real, duplicate, oracle in (
+        (0, 10.0, 12.0, 15.0),
+        (1, 20.0, 23.0, 28.0),
+    ):
+        _mujoco_artifact(mujoco, "Hopper-v4", "real", seed, "full-v1", real)
+        _mujoco_artifact(mujoco, "Hopper-v4", "duplicate", seed, "full-v1", duplicate)
+        _mujoco_artifact(mujoco, "Hopper-v4", "oracle_cf", seed, "full-v1", oracle)
+        _d4rl_artifact(
+            d4rl,
+            "real",
+            seed,
+            f"2026-09-01T00:0{seed}:00Z",
+            1_000.0 + seed,
+            10.0 + seed,
+        )
+        _d4rl_artifact(
+            d4rl,
+            "fresh_residual",
+            seed,
+            f"2026-09-01T00:1{seed}:00Z",
+            1_100.0 + seed,
+            11.0 + seed,
+        )
+        _d4rl_artifact(
+            d4rl,
+            "factual_residual",
+            seed,
+            f"2026-09-01T00:2{seed}:00Z",
+            1_300.0 + 100 * seed,
+            13.0 + 3 * seed,
+        )
+
+    outputs = summarize(
+        [mujoco], [d4rl], output, bootstrap_samples=2_000, bootstrap_seed=29
+    )
+
+    mujoco_deltas = [
+        row["delta"]
+        for row in outputs["matched_control_deltas"]
+        if row["domain"] == "mujoco_sac"
+    ]
+    assert mujoco_deltas == pytest.approx([3.0, 5.0])
+    mujoco_summary = _row(
+        outputs["matched_control_summary"],
+        domain="mujoco_sac",
+        contrast="oracle_cf_minus_duplicate",
+        metric="return",
+    )
+    assert mujoco_summary["mean"] == pytest.approx(4.0)
+    assert mujoco_summary["paired_seeds"] == "[0, 1]"
+    assert mujoco_summary["numerator_variant"] == "oracle_cf"
+    assert mujoco_summary["denominator_variant"] == "duplicate"
+
+    d4rl_summary = _row(
+        outputs["matched_control_summary"],
+        domain="d4rl_cql",
+        contrast="factual_residual_minus_fresh_residual",
+        metric="normalized_d4rl_score",
+    )
+    assert d4rl_summary["mean"] == pytest.approx(3.0)
+    assert d4rl_summary["positive_seeds"] == 2
+    assert d4rl_summary["paired_t_p_holm"] >= d4rl_summary["paired_t_p"]
+
+    for stem in ("matched_control_deltas", "matched_control_summary"):
+        assert (output / f"{stem}.json").is_file()
+        assert list(csv.DictReader((output / f"{stem}.csv").open()))
+
+
 def test_duplicate_protocol_job_id_fails_clearly(tmp_path: Path) -> None:
     first = tmp_path / "copy_a"
     second = tmp_path / "copy_b"

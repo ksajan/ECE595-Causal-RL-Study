@@ -31,6 +31,12 @@ the runtime actually observed by the process.
   `4cb1b30dbd4e9e220d42d6d2f0a40eb1d305569e2f9885839dfd89e3edc7b15d`
 - `scripts/workshop/monitor_reviewer_validation_cluster.sh`:
   `060debf2fadaed2b8dd7e07b69b4734085b193f6eec969d02b3ec5ff7e2a1a62`
+- `scripts/workshop/summarize_continuous_control_results.py`:
+  `f756f6e1cabdf768d4b0f002fd90faf45c3f63513023fbc7fc457f049c03ea64`
+- `scripts/workshop/plot_continuous_control_results.py`:
+  `3c94e7f71590f24631e338f7720274bd632dcb574c9410117bfb666b719bb2c8`
+- `scripts/workshop/render_continuous_control_report.py`:
+  `c40bf50eef9518f5c8b31b009cc84ccddf28368019c790344de8522866672612`
 
 The training-source hashes were checked on nodes 3--5 before their assigned
 launches. Nodes 4 and 5 also passed a 1,000-step oracle-CF smoke run, including
@@ -68,10 +74,12 @@ was not duplicated on nodes 4 or 5.
 `scripts/workshop/monitor_reviewer_validation_cluster.sh` polls nodes 1--5,
 synchronizes completed JSON artifacts, and recomputes paired inference. The
 publication generator remains gated on ten exact paired learner seeds for every
-required task and arm. Partial rows are diagnostic only. On the first successful
-gate, `scripts/workshop/finalize_reviewer_validation.sh` atomically creates a
-timestamped `final_10seed_*` snapshot containing the summaries, reportable
-figures and tables, execution notes, finalization metadata, checksums for the
-snapshot, and a checksum manifest covering every synchronized raw JSON artifact.
-An idempotent `FINALIZED_PATH` marker prevents later monitor cycles from
-overwriting that first complete result.
+required task and arm. It reports both augmentation-versus-real effects and the
+matched operational contrasts (`oracle_cf - duplicate` for SAC and
+`factual_residual - fresh_residual` for CQL). Partial rows are diagnostic only.
+On the first successful gate, `scripts/workshop/finalize_reviewer_validation.sh`
+atomically creates a timestamped `final_10seed_*` snapshot containing the
+summaries, reportable figures and tables, execution notes, finalization metadata,
+checksums for the snapshot, and a checksum manifest covering every synchronized
+raw JSON artifact. An idempotent `FINALIZED_PATH` marker prevents later monitor
+cycles from overwriting that first complete result.

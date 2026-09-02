@@ -54,7 +54,19 @@ OUTPUT_STEMS = (
     "aggregate_results",
     "paired_deltas",
     "paired_summary",
+    "matched_control_deltas",
+    "matched_control_summary",
 )
+MATCHED_CONTROL_CONTRASTS = {
+    "mujoco_sac": (("oracle_cf", "duplicate", "oracle_cf_minus_duplicate"),),
+    "d4rl_cql": (
+        (
+            "factual_residual",
+            "fresh_residual",
+            "factual_residual_minus_fresh_residual",
+        ),
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -714,6 +726,132 @@ def paired_summary_rows(
     return summaries
 
 
+def matched_control_delta_rows(
+    run_rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Pair each causal arm with its non-causal matched augmentation control."""
+
+    grouped: dict[tuple[str, str, str, str, int], list[Mapping[str, Any]]] = (
+        defaultdict(list)
+    )
+    for row in run_rows:
+        key = (
+            str(row["domain"]),
+            str(row["task"]),
+            str(row["protocol_id"]),
+            str(row["metric"]),
+            int(row["seed"]),
+        )
+        grouped[key].append(row)
+
+    contrasts: list[dict[str, Any]] = []
+    for key, rows in sorted(grouped.items()):
+        specifications = MATCHED_CONTROL_CONTRASTS.get(key[0], ())
+        if not specifications:
+            continue
+        variants: dict[str, Mapping[str, Any]] = {}
+        for row in rows:
+            name = str(row["variant"])
+            if name in variants:
+                raise ValueError(
+                    "Ambiguous matched-control run for "
+                    f"domain/task/protocol/metric/seed/variant {key + (name,)}"
+                )
+            variants[name] = row
+        for numerator_name, denominator_name, contrast_name in specifications:
+            if numerator_name not in variants or denominator_name not in variants:
+                continue
+            numerator = variants[numerator_name]
+            denominator = variants[denominator_name]
+            contrasts.append(
+                {
+                    "domain": key[0],
+                    "task": key[1],
+                    "protocol_id": key[2],
+                    "metric": key[3],
+                    "seed": key[4],
+                    "contrast": contrast_name,
+                    "numerator_variant": numerator_name,
+                    "denominator_variant": denominator_name,
+                    "numerator_value": numerator["value"],
+                    "denominator_value": denominator["value"],
+                    "delta": float(numerator["value"]) - float(denominator["value"]),
+                    "numerator_protocol_job_id": numerator["protocol_job_id"],
+                    "denominator_protocol_job_id": denominator["protocol_job_id"],
+                    "protocol_json": numerator["protocol_json"],
+                    "budget_unit": numerator["budget_unit"],
+                    "budget_value": numerator["budget_value"],
+                    "eval_episodes": numerator["eval_episodes"],
+                    "eval_seed_base": numerator["eval_seed_base"],
+                    "batch_size": numerator["batch_size"],
+                    "total_timesteps": numerator["total_timesteps"],
+                    "training_updates": numerator["training_updates"],
+                    "transition_count": numerator["transition_count"],
+                    "cf_fraction": numerator["cf_fraction"],
+                    "intervention_scale": numerator["intervention_scale"],
+                    "numerator_artifact_path": numerator["artifact_path"],
+                    "denominator_artifact_path": denominator["artifact_path"],
+                }
+            )
+    return contrasts
+
+
+def matched_control_summary_rows(
+    contrast_rows: Sequence[Mapping[str, Any]],
+    bootstrap_samples: int,
+    bootstrap_seed: int,
+) -> list[dict[str, Any]]:
+    """Aggregate paired causal-minus-control effects across learner seeds."""
+
+    grouped: dict[tuple[str, ...], list[Mapping[str, Any]]] = defaultdict(list)
+    for row in contrast_rows:
+        key = (
+            str(row["domain"]),
+            str(row["task"]),
+            str(row["protocol_id"]),
+            str(row["contrast"]),
+            str(row["metric"]),
+        )
+        grouped[key].append(row)
+    summaries: list[dict[str, Any]] = []
+    for key, rows in sorted(grouped.items()):
+        first = rows[0]
+        values = [float(row["delta"]) for row in rows]
+        seed = bootstrap_seed + int(
+            hashlib.sha256(
+                ("matched-control|" + "|".join(key)).encode("utf-8")
+            ).hexdigest()[:8],
+            16,
+        )
+        summaries.append(
+            {
+                "domain": key[0],
+                "task": key[1],
+                "protocol_id": key[2],
+                "contrast": key[3],
+                "metric": key[4],
+                "numerator_variant": first["numerator_variant"],
+                "denominator_variant": first["denominator_variant"],
+                "protocol_json": first["protocol_json"],
+                "budget_unit": first["budget_unit"],
+                "budget_value": first["budget_value"],
+                "eval_episodes": first["eval_episodes"],
+                "eval_seed_base": first["eval_seed_base"],
+                "batch_size": first["batch_size"],
+                "total_timesteps": first["total_timesteps"],
+                "training_updates": first["training_updates"],
+                "transition_count": first["transition_count"],
+                "cf_fraction": first["cf_fraction"],
+                "intervention_scale": first["intervention_scale"],
+                "paired_seeds": json.dumps(sorted(int(row["seed"]) for row in rows)),
+                **_summary_statistics(values, bootstrap_samples, seed),
+                **_paired_inference(values, seed),
+            }
+        )
+    _add_holm_adjustments(summaries)
+    return summaries
+
+
 def _write_rows(output_dir: Path, stem: str, rows: Sequence[Mapping[str, Any]]) -> None:
     """Write the same tidy rows as deterministic CSV and JSON files."""
 
@@ -750,11 +888,17 @@ def summarize(
     paired_summary = paired_summary_rows(
         paired_deltas, bootstrap_samples, bootstrap_seed
     )
+    matched_control_deltas = matched_control_delta_rows(run_results)
+    matched_control_summary = matched_control_summary_rows(
+        matched_control_deltas, bootstrap_samples, bootstrap_seed
+    )
     outputs = {
         "run_results": run_results,
         "aggregate_results": aggregate_results,
         "paired_deltas": paired_deltas,
         "paired_summary": paired_summary,
+        "matched_control_deltas": matched_control_deltas,
+        "matched_control_summary": matched_control_summary,
     }
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in OUTPUT_STEMS:
