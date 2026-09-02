@@ -67,7 +67,25 @@ was not duplicated on nodes 4 or 5.
 - Node 1 finishes the current HalfCheetah-medium-v2 seed-7 synthetic arms and
   seed-8 real arm.
 - Node 3 runs HalfCheetah-medium-v2 synthetic seeds 8--9 and real seed 9.
-- Node 2 retains the Hopper-medium-v2 queues through seed 9.
+- Node 2 retains Hopper-medium-v2 seed 8 for all synthetic arms, seed 9 for the
+  real arm, and seed 9 for the simulator-mean arm.
+- After their SAC seed-9 processes exit, node 4 runs Hopper-medium-v2
+  fresh-residual seed 9 and node 5 runs factual-residual seed 9. The original
+  node-2 queue parents for these two arms were retired while their seed-8 child
+  processes remained live, preventing duplicate seed-9 launches.
+
+Before the handoff, the Hopper dataset and augmentation cache were copied to
+nodes 4 and 5 and verified against the node-2 source:
+
+- `data/d4rl_hdf5/hopper-medium-v2.hdf5`:
+  `5bdf1bc4a713c82941de44633df669b36c89850b652a25985166796d25cf71a0`
+- `data/d4rl_simulator_cf_v2/hopper-medium-v2/augmentation_seed_0_scale_0p1_n_all.hdf5`:
+  `96077e9670e8a410ff87137e5ee25d9f223e3426b9b7a0e8f83953a549bd8cf5`
+
+All three participating nodes reported identical hashes for the D4RL runner
+(`9482f5ae3599307a6f46e1bd7054ab599a71954543ce8d33920df335b7a59a10`)
+and queue wrapper
+(`5cce506cecaefc3a343773cd29325340e475bcb9f8b6be9ef9866dda2113dc0b`).
 
 ## Collection and publication gate
 
