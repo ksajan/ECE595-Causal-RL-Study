@@ -27,6 +27,10 @@ the runtime actually observed by the process.
   `2e20508e1bfefeb41b88d906c36534236998da666d61c550796999b496929939`
 - `scripts/cluster/retire_queue_after_child.sh`:
   `ab8bb83dbfb41b10c657acb92af99b01ea9bb8b8c26ac151b8d67e2d23465339`
+- `scripts/workshop/finalize_reviewer_validation.sh`:
+  `4cb1b30dbd4e9e220d42d6d2f0a40eb1d305569e2f9885839dfd89e3edc7b15d`
+- `scripts/workshop/monitor_reviewer_validation_cluster.sh`:
+  `060debf2fadaed2b8dd7e07b69b4734085b193f6eec969d02b3ec5ff7e2a1a62`
 
 The training-source hashes were checked on nodes 3--5 before their assigned
 launches. Nodes 4 and 5 also passed a 1,000-step oracle-CF smoke run, including
@@ -64,4 +68,10 @@ was not duplicated on nodes 4 or 5.
 `scripts/workshop/monitor_reviewer_validation_cluster.sh` polls nodes 1--5,
 synchronizes completed JSON artifacts, and recomputes paired inference. The
 publication generator remains gated on ten exact paired learner seeds for every
-required task and arm. Partial rows are diagnostic only.
+required task and arm. Partial rows are diagnostic only. On the first successful
+gate, `scripts/workshop/finalize_reviewer_validation.sh` atomically creates a
+timestamped `final_10seed_*` snapshot containing the summaries, reportable
+figures and tables, execution notes, finalization metadata, checksums for the
+snapshot, and a checksum manifest covering every synchronized raw JSON artifact.
+An idempotent `FINALIZED_PATH` marker prevents later monitor cycles from
+overwriting that first complete result.

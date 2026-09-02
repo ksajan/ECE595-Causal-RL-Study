@@ -94,6 +94,9 @@ poll_once() {
             --summary-dir "$local_root/summary_current" \
             --output-dir "$publication_dir" >>"$gate_log" 2>&1; then
             echo "[publication] ten-seed figure and report gates passed"
+            if ! bash scripts/workshop/finalize_reviewer_validation.sh; then
+                echo "[publication] immutable finalization failed" >&2
+            fi
         else
             rm -rf "$publication_dir"
             echo "[publication] report gate failed; see $gate_log"
