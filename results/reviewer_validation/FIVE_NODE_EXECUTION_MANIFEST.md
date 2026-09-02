@@ -25,22 +25,27 @@ the runtime actually observed by the process.
   `b8c19e6d755ecc879111faaa4f7ec5f7c1ebc81ccc15ba6b86a584eb66501479`
 - `scripts/workshop/queue_mujoco_oracle_seeds.sh`:
   `2e20508e1bfefeb41b88d906c36534236998da666d61c550796999b496929939`
+- `scripts/cluster/retire_queue_after_child.sh`:
+  `ab8bb83dbfb41b10c657acb92af99b01ea9bb8b8c26ac151b8d67e2d23465339`
 
-The source hashes were checked on nodes 4 and 5 before launch. Both nodes also
-passed a 1,000-step oracle-CF smoke run, including evaluation and JSON artifact
-creation, before any study seed was started.
+The training-source hashes were checked on nodes 3--5 before their assigned
+launches. Nodes 4 and 5 also passed a 1,000-step oracle-CF smoke run, including
+evaluation and JSON artifact creation, before any study seed was started.
 
 ## SAC tail allocation
 
 The original node-1 and node-2 parent queues were stopped without stopping
-their active seed-5 children. Handoff watchers launch only seeds 6--7 after the
-corresponding child exits. Seeds 8--9 are disjoint and run on the new nodes.
+their active seed-5 children. Handoff watchers launched seeds 6--7 after those
+children exited. Once node 3 became idle, the replacement queues were stopped
+again while their seed-6 children continued; retirement watchers prevent those
+queues from launching seed 7. Node 3 owns seed 7, while seeds 8--9 remain
+disjoint on nodes 4 and 5.
 
 | Node | Environment and variants | Seeds |
 |---|---|---:|
-| 1 | HalfCheetah-v4: real, duplicate, oracle_cf; Ant-v4: real | 5 active, then 6--7 |
-| 2 | Hopper-v4: real, duplicate, oracle_cf; Ant-v4: duplicate | 5 active, then 6--7 |
-| 3 | Existing Ant-v4 oracle_cf and Walker2d-v4 queues | through 9 |
+| 1 | HalfCheetah-v4: real, duplicate, oracle_cf; Ant-v4: real | 5--6 |
+| 2 | Hopper-v4: real, duplicate, oracle_cf; Ant-v4: duplicate | 5--6 |
+| 3 | Ant-v4 oracle_cf and Walker2d-v4 complete; all remaining listed SAC arms | 7 |
 | 4 | HalfCheetah-v4: real, duplicate, oracle_cf; Ant-v4: real | 8--9 |
 | 5 | Hopper-v4: real, duplicate, oracle_cf; Ant-v4: duplicate | 8--9 |
 
