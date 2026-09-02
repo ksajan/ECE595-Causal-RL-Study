@@ -29,7 +29,7 @@ fi
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 
-read -r -a nodes <<< "${REVIEWER_NODES:-1 2 3}"
+read -r -a nodes <<< "${REVIEWER_NODES:-1 2 3 4 5}"
 remote_user=${REVIEWER_REMOTE_USER:-tasiuser}
 remote_domain=${REVIEWER_REMOTE_DOMAIN:-boilerad.purdue.edu}
 local_root=results/reviewer_validation
@@ -54,12 +54,19 @@ poll_once() {
         fi
         printf 'node%s %s\n' "$node" "$status"
 
-        if ! rsync -a --prune-empty-dirs --include='*/' --include='*.json' \
+        remote_rsync=rsync
+        if [[ $node == 4 || $node == 5 ]]; then
+            remote_rsync="/home/${remote_user}/.local/bin/rsync"
+        fi
+
+        if ! rsync -a --rsync-path="$remote_rsync" --prune-empty-dirs \
+            --include='*/' --include='*.json' \
             --exclude='*' "$target:~/ece595-revision/results/mujoco_oracle_full/" \
             "$local_root/raw/mujoco/"; then
             printf 'node%s MuJoCo sync failed; retrying next poll\n' "$node" >&2
         fi
-        if ! rsync -a --prune-empty-dirs --include='*/' --include='*.json' \
+        if ! rsync -a --rsync-path="$remote_rsync" --prune-empty-dirs \
+            --include='*/' --include='*.json' \
             --exclude='*' "$target:~/ece595-revision/results/d4rl_cql_full/" \
             "$local_root/raw/d4rl/"; then
             printf 'node%s D4RL sync failed; retrying next poll\n' "$node" >&2
