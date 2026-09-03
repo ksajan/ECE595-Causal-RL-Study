@@ -1,0 +1,19 @@
+{
+  "generated_at_utc": "2026-09-03T04:02:24+00:00",
+  "git_commit": "6235f5c618c8bb0022d547d3fbed599d753ba178",
+  "minimum_paired_seeds": 10,
+  "raw_json_bytes": 21849409,
+  "raw_json_file_count": 1172,
+  "required_seed_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ]
+}

@@ -1,8 +1,9 @@
 # Interim Publication Decisions
 
-This file records decisions made while the optional continuous-control matrix
-is running. It is not part of the tagged `claramas-2026-revision-v2`
-submission.
+This file records decisions for the optional continuous-control matrix. It is
+not part of the tagged `claramas-2026-revision-v2` submission. The complete
+matrix was frozen at `final_10seed_20260903T040220Z` after every planned row
+reached paired seeds 0--9.
 
 ## Walker2d-v4 SAC: complete 10-seed cohort
 
@@ -94,3 +95,40 @@ real-only training.
 but do not reopen revision v2. It is scientifically useful evidence for the
 importance of noise handling, yet it evaluates simulator-derived residual
 controls rather than the paper's learned BiCoGAN counterfactual generator.
+
+## Final online SAC matrix
+
+All four MuJoCo tasks use paired seeds 0--9, 1,000,000 real environment
+interactions, 100 deterministic evaluation episodes per seed, common
+evaluation seeds, and matched SAC update budgets.
+
+| Task | Real | Duplicate | Oracle CF | Oracle CF delta vs. real [95% CI] |
+|---|---:|---:|---:|---:|
+| HalfCheetah-v4 | 10904.34 | 11176.52 | 10653.30 | -251.04 [-770.21, +218.64] |
+| Hopper-v4 | 2969.76 | 3171.01 | 2910.04 | -59.71 [-644.16, +536.84] |
+| Walker2d-v4 | 4620.99 | 4222.67 | 4597.47 | -23.52 [-416.41, +371.25] |
+| Ant-v4 | 3842.57 | 3777.98 | 4280.06 | +437.49 [-267.37, +1113.85] |
+
+Every oracle-CF versus real interval includes zero, and every Holm-adjusted
+paired test equals 1.00. Direct oracle-CF minus duplicate-replay intervals are
+negative for HalfCheetah, inconclusive for Hopper and Ant, and positive for
+Walker2d. None of those direct contrasts survives the planned Holm-adjusted
+test family (`p >= 0.195`). Thus the task-level point estimates cannot support
+a general SAC benefit, harm, or task-sensitivity claim.
+
+## Final publication judgment
+
+The complete matrix strengthens the decision to leave revision v2 unchanged.
+It demonstrates that the corrected SAC and CQL baselines run at credible
+scales, while showing that simulator-derived one-step augmentation is not
+uniformly beneficial. The strongest narrow result is Hopper-medium's
+factual-residual advantage over fresh residuals; factual residuals still do
+not outperform real-only data. HalfCheetah-medium shows only sub-0.5-point
+gains that are shared by factual, fresh, and simulator-mean controls.
+
+These findings are valuable follow-up evidence but do not repair the learned
+BiCoGAN's failed eligibility gate and do not constitute a CTRL reproduction.
+Adding them to the manuscript would reintroduce continuous-control scope
+without strengthening the revised CartPole mechanism claim. Keep the frozen
+v2 manuscript and reviewer response as the submission, and retain this matrix
+as an auditable post-revision validation artifact.

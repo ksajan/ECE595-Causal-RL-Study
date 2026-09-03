@@ -1,0 +1,65 @@
+% Generated only after the ten-paired-seed publication gate passed.
+\begin{table}[t]
+\centering
+\small
+\caption{Online SAC paired effects; mean difference from real-only with 95\% paired bootstrap interval.}
+\label{tab:sac_paired}
+\begin{tabular}{llrr}
+\toprule
+Task & Arm & Absolute mean & $\Delta$ [95\% CI] \\
+\midrule
+HalfCheetah & Real & 10904.34 & -- \\
+HalfCheetah & Duplicate control & 11176.52 & 272.18 [39.75, 501.18] \\
+HalfCheetah & Oracle counterfactual & 10653.30 & -251.04 [-770.21, 218.64] \\
+Hopper & Real & 2969.76 & -- \\
+Hopper & Duplicate control & 3171.01 & 201.25 [-178.98, 625.40] \\
+Hopper & Oracle counterfactual & 2910.04 & -59.71 [-644.16, 536.84] \\
+Walker2d & Real & 4620.99 & -- \\
+Walker2d & Duplicate control & 4222.67 & -398.32 [-741.68, -49.80] \\
+Walker2d & Oracle counterfactual & 4597.47 & -23.52 [-416.41, 371.25] \\
+Ant & Real & 3842.57 & -- \\
+Ant & Duplicate control & 3777.98 & -64.59 [-692.12, 683.19] \\
+Ant & Oracle counterfactual & 4280.06 & 437.49 [-267.37, 1113.85] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\small
+\caption{Offline CQL paired effects; mean difference from real-only with 95\% paired bootstrap interval.}
+\label{tab:d4rl_paired}
+\begin{tabular}{llrr}
+\toprule
+Task & Arm & Absolute mean & $\Delta$ [95\% CI] \\
+\midrule
+HalfCheetah-medium & Real & 47.01 & -- \\
+HalfCheetah-medium & Simulator mean & 47.43 & 0.42 [0.22, 0.61] \\
+HalfCheetah-medium & Fresh residual & 47.35 & 0.35 [0.25, 0.43] \\
+HalfCheetah-medium & Factual residual & 47.40 & 0.39 [0.17, 0.59] \\
+Hopper-medium & Real & 54.26 & -- \\
+Hopper-medium & Simulator mean & 54.23 & -0.03 [-1.62, 1.98] \\
+Hopper-medium & Fresh residual & 50.36 & -3.89 [-5.76, -2.28] \\
+Hopper-medium & Factual residual & 55.34 & 1.09 [-0.51, 2.72] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\small
+\caption{Matched augmentation-control effects; mean paired difference with 95\% bootstrap interval.}
+\label{tab:matched_control_paired}
+\begin{tabular}{lll}
+\toprule
+Domain and task & Contrast & $\Delta$ [95\% CI] \\
+\midrule
+SAC HalfCheetah & Oracle CF $-$ duplicate & -523.22 [-1079.61, -67.54] \\
+SAC Hopper & Oracle CF $-$ duplicate & -260.96 [-888.28, 436.24] \\
+SAC Walker2d & Oracle CF $-$ duplicate & 374.80 [37.24, 719.80] \\
+SAC Ant & Oracle CF $-$ duplicate & 502.07 [-287.10, 1246.84] \\
+CQL HalfCheetah-medium & Factual $-$ fresh residual & 0.04 [-0.10, 0.19] \\
+CQL Hopper-medium & Factual $-$ fresh residual & 4.98 [3.46, 6.66] \\
+\bottomrule
+\end{tabular}
+\end{table}
