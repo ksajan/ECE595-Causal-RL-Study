@@ -63,3 +63,34 @@ factual residual is better than drawing a fresh residual in this task.
 **Publication decision:** do not reopen revision v2 for this result. It verifies
 that the corrected CQL baseline is functional, but the augmentation effect is
 too small and causally non-specific to strengthen the paper's principal claim.
+
+## Hopper-medium-v2 CQL: complete 10-seed cohort
+
+Protocol: paired training seeds 0--9, 500,000 gradient updates, the full
+one-million-transition D4RL dataset, and 50 evaluation episodes per seed. The
+primary metric is normalized D4RL score.
+
+| Variant | Mean normalized score | SD | Paired delta vs. real | 95% paired bootstrap CI |
+|---|---:|---:|---:|---:|
+| Real only | 54.255 | 1.774 | -- | -- |
+| Factual residual | 55.342 | 3.250 | +1.087 | [-0.511, +2.720] |
+| Fresh residual | 50.362 | 2.607 | -3.893 | [-5.764, -2.280] |
+| Simulator mean | 54.230 | 2.308 | -0.025 | [-1.624, +1.983] |
+
+Factual-residual and simulator-mean augmentation are indistinguishable from
+real-only training. Fresh-residual augmentation is worse than real-only on all
+ten paired seeds; its paired delta remains below zero after Holm correction
+(`t` p=0.0128, Wilcoxon p=0.0117, sign-randomization p=0.0117).
+
+The direct factual-residual minus fresh-residual contrast is +4.980 normalized
+score with a 95% paired bootstrap interval of [+3.458, +6.661]. All ten paired
+differences are positive, and the Holm-adjusted p-values are 0.000535, 0.00391,
+and 0.00391. This supports a narrow diagnostic conclusion: preserving the
+transition-specific residual avoids the degradation caused by injecting fresh
+noise. It does not show that factual-residual augmentation improves over
+real-only training.
+
+**Publication decision:** retain this result in the optional validation record,
+but do not reopen revision v2. It is scientifically useful evidence for the
+importance of noise handling, yet it evaluates simulator-derived residual
+controls rather than the paper's learned BiCoGAN counterfactual generator.
